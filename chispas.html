@@ -3,149 +3,625 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
-<title>CHISPAS · Feria Nocturna</title>
+<title>CHISPAS 3D · Feria Nocturna</title>
 <style>
-  html,body{margin:0;height:100%;background:#07050f;overflow:hidden;
+  html,body{margin:0;height:100%;background:#05030c;overflow:hidden;
     font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
-    -webkit-tap-highlight-color:transparent;}
+    -webkit-tap-highlight-color:transparent;user-select:none;}
   canvas{display:block;touch-action:none;}
+
+  /* ---------- HUD ---------- */
+  #hud{position:fixed;inset:0;pointer-events:none;z-index:5;color:#fff;font-family:inherit;}
+  #hud-left{position:absolute;top:20px;left:22px;}
+  .hud-label{font-size:11px;color:rgba(255,210,63,.7);font-weight:600;letter-spacing:1px;}
+  .hud-score{font-size:34px;font-weight:700;color:#ffd23f;line-height:1;margin-top:4px;
+    transition:transform .12s ease-out;transform-origin:left center;}
+  .hud-score.pop{transform:scale(1.18);}
+  .charge-bar{width:168px;height:9px;background:rgba(255,255,255,.08);border-radius:5px;
+    margin-top:12px;overflow:hidden;}
+  .charge-fill{height:100%;width:0%;background:rgba(255,210,63,.55);border-radius:5px;
+    transition:width .08s linear,background .2s,box-shadow .2s;}
+  .charge-fill.ready{background:#ffe27a;box-shadow:0 0 10px rgba(255,210,63,.7);}
+  .charge-hint{font-size:10px;color:rgba(200,190,230,.5);margin-top:6px;letter-spacing:.5px;}
+  .charge-hint.ready{color:#ffe27a;}
+  #hud-center{position:absolute;top:20px;left:50%;transform:translateX(-50%);}
+  .timer{font-size:26px;font-weight:700;color:rgba(230,225,255,.85);}
+  .timer.low{color:#ff4d6d;}
+  #hud-right{position:absolute;top:22px;right:22px;text-align:right;}
+  .rival{margin-bottom:8px;}
+  .rival-score{font-size:15px;font-weight:700;}
+  .rival-name{font-size:10px;opacity:.45;letter-spacing:.5px;}
+
+  /* ---------- Flash ---------- */
+  #flash{position:fixed;inset:0;background:#ffe0a0;opacity:0;pointer-events:none;
+    z-index:6;mix-blend-mode:screen;}
+
+  /* ---------- Overlay (menú / fin de ronda) ---------- */
+  .overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;
+    background:rgba(5,3,12,.78);backdrop-filter:blur(3px);z-index:8;color:#fff;text-align:center;
+    padding:20px;font-family:inherit;}
+  .overlay.show{display:flex;}
+  .overlay-content{max-width:520px;}
+  .overlay h1{font-size:clamp(38px,10vw,72px);color:#ffd23f;font-weight:800;letter-spacing:2px;
+    margin:0 0 6px;text-shadow:0 0 40px rgba(255,210,63,.6);}
+  .overlay .sub{font-size:12px;color:rgba(190,180,225,.75);letter-spacing:4px;margin:0 0 38px;}
+  .overlay .howto{font-size:14px;line-height:1.65;color:rgba(230,225,255,.85);margin:0 0 22px;}
+  .overlay .howto strong{color:#ffd23f;}
+  .overlay .controls{font-size:12px;color:rgba(180,170,215,.6);margin-bottom:34px;}
+  .overlay .cta{font-size:15px;font-weight:700;color:rgba(255,255,255,.9);
+    animation:pulse 1.6s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{opacity:.45;}50%{opacity:1;}}
+  .overlay .winner{font-size:18px;font-weight:700;margin:0 0 26px;}
+  .overlay .ranking{list-style:none;padding:0;margin:0 0 30px;font-size:18px;}
+  .overlay .ranking li{margin-bottom:8px;font-weight:700;}
+
+  /* ---------- Botones ---------- */
   #ui{position:fixed;left:0;right:0;bottom:0;display:flex;gap:6px;justify-content:center;
-      padding:8px;pointer-events:none;z-index:10;}
+    padding:8px;pointer-events:none;z-index:10;}
   #ui button{pointer-events:auto;cursor:pointer;border:1px solid #3a2f5c;border-radius:8px;
-      background:rgba(20,16,38,.82);color:#cfc6f0;font:600 11px ui-monospace,monospace;
-      padding:6px 10px;letter-spacing:.5px;transition:background .15s,border-color .15s;}
+    background:rgba(20,16,38,.82);color:#cfc6f0;font:600 11px ui-monospace,monospace;
+    padding:6px 10px;letter-spacing:.5px;transition:background .15s,border-color .15s;}
   #ui button:hover{background:rgba(40,32,70,.95);border-color:#6b57b8;}
-  #ui button.off{opacity:.42;}
+  #ui button.off{opacity:.4;}
   #ui button:focus-visible{outline:2px solid #ffd23f;outline-offset:2px;}
 </style>
 </head>
 <body>
 <canvas id="game"></canvas>
+
+<div id="hud">
+  <div id="hud-left">
+    <div class="hud-label">TÚ</div>
+    <div class="hud-score" id="playerScore">0</div>
+    <div class="charge-bar"><div class="charge-fill" id="chargeFill"></div></div>
+    <div class="charge-hint" id="chargeHint">CHOCA PARA CARGAR</div>
+  </div>
+  <div id="hud-center"><div class="timer" id="timer">1:30</div></div>
+  <div id="hud-right"></div>
+</div>
+
+<div id="flash"></div>
+
+<div class="overlay show" id="overlay">
+  <div class="overlay-content" id="overlayContent"></div>
+</div>
+
 <div id="ui">
   <button id="btnSound" aria-pressed="true">🔊 Sonido</button>
   <button id="btnShake" aria-pressed="true">📳 Sacudida</button>
   <button id="btnFlash" aria-pressed="true">✨ Destellos</button>
+  <button id="btnBloom" aria-pressed="true">💡 Brillo</button>
 </div>
-<script>
-(function(){
-'use strict';
 
-/* =========================================================
-   CHISPAS · Feria Nocturna
-   Vanilla Canvas2D. Sin dependencias. Sin assets externos.
-   ========================================================= */
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+/* ==========================================================
+   CHISPAS 3D · Feria Nocturna
+   Three.js r160 · módulo único, sin build step.
+   ========================================================== */
 
 const TAU = Math.PI * 2;
-const clamp = (v,a,b)=> v<a?a:(v>b?b:v);
+const clamp = (v, a, b) => v < a ? a : (v > b ? b : v);
 
-const canvas = document.getElementById('game');
-const ctx = canvas.getContext('2d', { alpha:false });
+/* ---------------- constantes ---------------- */
+const ARENA_R      = 16;
+const FOCO_R       = 4.5;
+const CAR_R        = 1.1;
+const THRUST       = 30;
+const MAX_SPEED    = 12;
+const DAMP         = 2.4;
+const RESTITUTION  = 0.55;
+const MIN_CHARGE   = 25;
+const MULT_FOCO    = 3;
+const DISCHARGE_CD = 0.75;
+const ROUND_LEN    = 90;
+const MAX_PARTICLES = 600;
 
-let W=0, H=0, DPR=1;
-const arena = { x:0, y:0, r:0 };
-let FOCO_R = 100;
+const COLORS = [0xffd23f, 0xff4d6d, 0x4dd4ff, 0x8affc1];
+const NAMES  = ['TÚ', 'ROJO', 'CIAN', 'VERDE'];
 
-const opts = { sound:true, shake:true, flash:true };
+/* ---------------- opciones accesibilidad ---------------- */
+const opts = { sound: true, shake: true, flash: true, bloom: true };
 
+/* ---------------- estado ---------------- */
 const state = {
-  mode:'menu',            // 'menu' | 'play' | 'over'
-  time:0,
-  roundLen:90,
-  remaining:90,
-  shake:0,
-  flash:0,
-  hitstop:0,
-  endTimer:0,
+  mode: 'menu',        // 'menu' | 'play' | 'over'
+  time: 0,
+  remaining: ROUND_LEN,
+  shake: 0,
+  flash: 0,
+  hitstop: 0,
+  endTimer: 0,
 };
 
 let cars = [];
 let player = null;
 
-/* ---------------- tuning ---------------- */
-const CAR_R      = 21;
-const THRUST     = 1200;
-const MAX_SPEED  = 460;
-const DAMP       = 2.4;
-const RESTITUTION= 0.55;
-const MIN_CHARGE = 25;      // chispa mínima para descargar
-const MULT_FOCO  = 3;       // multiplicador dentro del foco
-const DISCHARGE_CD = 0.75;
+/* ---------------- renderer / escena ---------------- */
+const canvas = document.getElementById('game');
+const renderer = new THREE.WebGLRenderer({
+  canvas, antialias: true, powerPreference: 'high-performance'
+});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.15;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
 
-const COLORS = ['#ffd23f', '#ff4d6d', '#4dd4ff', '#8affc1'];
-const NAMES  = ['TÚ', 'ROJO', 'CIAN', 'VERDE'];
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x05030c);
+scene.fog = new THREE.Fog(0x05030c, 32, 70);
 
-/* ---------------- utilidades ---------------- */
-function hexA(hex, a){
-  const n = parseInt(hex.slice(1),16);
-  return `rgba(${(n>>16)&255},${(n>>8)&255},${n&255},${a})`;
+const camera = new THREE.PerspectiveCamera(
+  58, window.innerWidth / window.innerHeight, 0.1, 200
+);
+camera.position.set(0, 20, 12);
+
+/* ---------------- post-procesado ---------------- */
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+const bloomPass = new UnrealBloomPass(
+  new THREE.Vector2(window.innerWidth * 0.5, window.innerHeight * 0.5),
+  0.95, 0.55, 0.35
+);
+composer.addPass(bloomPass);
+
+/* ---------------- luces ---------------- */
+scene.add(new THREE.AmbientLight(0x3a2f5c, 1.3));
+
+const dir = new THREE.DirectionalLight(0xffffff, 2.2);
+dir.position.set(6, 18, 10);
+scene.add(dir);
+
+const hemi = new THREE.HemisphereLight(0x2a2050, 0x080616, 0.9);
+scene.add(hemi);
+
+const focoLight = new THREE.PointLight(0xffb040, 40, 26, 2);
+focoLight.position.set(0, 3, 0);
+scene.add(focoLight);
+
+/* ---------------- texturas procedurales ---------------- */
+function createGlowTexture(size = 64) {
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  const g = c.getContext('2d');
+  const grad = g.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2);
+  grad.addColorStop(0,   'rgba(255,255,255,1)');
+  grad.addColorStop(0.3, 'rgba(255,255,255,0.8)');
+  grad.addColorStop(1,   'rgba(255,255,255,0)');
+  g.fillStyle = grad;
+  g.fillRect(0, 0, size, size);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
 }
-function angTo(a,b){
-  let d = b - a;
-  while (d >  Math.PI) d -= TAU;
-  while (d < -Math.PI) d += TAU;
-  return d;
-}
-function roundRect(c,x,y,w,h,r){
-  r = Math.min(r, w*0.5, h*0.5);
-  c.beginPath();
-  c.moveTo(x+r,y);
-  c.arcTo(x+w,y,x+w,y+h,r);
-  c.arcTo(x+w,y+h,x,y+h,r);
-  c.arcTo(x,y+h,x,y,r);
-  c.arcTo(x,y,x+w,y,r);
-  c.closePath();
+
+function createGridTexture(size = 256) {
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  const g = c.getContext('2d');
+  g.fillStyle = '#0a0818';
+  g.fillRect(0, 0, size, size);
+  g.strokeStyle = 'rgba(120,100,200,0.18)';
+  g.lineWidth = 2;
+  const step = size / 8;
+  for (let i = 0; i <= 8; i++) {
+    g.beginPath(); g.moveTo(i*step, 0); g.lineTo(i*step, size); g.stroke();
+    g.beginPath(); g.moveTo(0, i*step); g.lineTo(size, i*step); g.stroke();
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(15, 15);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 4;
+  return tex;
 }
 
-/* ---------------- audio (sintetizado) ---------------- */
-let actx=null, master=null;
+const glowTex = createGlowTexture(64);
+const gridTex = createGridTexture(256);
 
-function ensureAudio(){
+/* ---------------- suelo ---------------- */
+const floorGeo = new THREE.PlaneGeometry(70, 70);
+const floorMat = new THREE.MeshStandardMaterial({
+  map: gridTex,
+  color: 0xffffff,
+  metalness: 0.35,
+  roughness: 0.75,
+  emissive: 0x0a0820,
+  emissiveIntensity: 0.4,
+});
+const floor = new THREE.Mesh(floorGeo, floorMat);
+floor.rotation.x = -Math.PI / 2;
+floor.position.y = -0.01;
+scene.add(floor);
+
+/* ---------------- aro de la arena ---------------- */
+const edgeRing = new THREE.Mesh(
+  new THREE.TorusGeometry(ARENA_R, 0.13, 6, 80),
+  new THREE.MeshBasicMaterial({ color: 0x8a7aff })
+);
+edgeRing.rotation.x = -Math.PI / 2;
+edgeRing.position.y = 0.12;
+scene.add(edgeRing);
+
+/* ---------------- bombillas del borde ---------------- */
+const bulbGeo = new THREE.SphereGeometry(0.16, 8, 6);
+const bulbs = [];
+const BULB_N = 32;
+for (let i = 0; i < BULB_N; i++) {
+  const a = (i / BULB_N) * TAU;
+  const mat = new THREE.MeshBasicMaterial({ color: 0xffd23f });
+  const b = new THREE.Mesh(bulbGeo, mat);
+  b.position.set(Math.cos(a) * (ARENA_R + 0.4), 0.35, Math.sin(a) * (ARENA_R + 0.4));
+  scene.add(b);
+  bulbs.push(b);
+}
+
+/* ---------------- FOCO ---------------- */
+// haz vertical
+const beamMat = new THREE.MeshBasicMaterial({
+  color: 0xffd23f,
+  transparent: true,
+  opacity: 0.18,
+  blending: THREE.AdditiveBlending,
+  depthWrite: false,
+  side: THREE.DoubleSide,
+});
+const beam = new THREE.Mesh(
+  new THREE.CylinderGeometry(FOCO_R, FOCO_R * 0.72, 26, 24, 1, true),
+  beamMat
+);
+beam.position.y = 13;
+scene.add(beam);
+
+// halo en el suelo
+const focoGlow = new THREE.Mesh(
+  new THREE.CircleGeometry(FOCO_R * 1.25, 56),
+  new THREE.MeshBasicMaterial({
+    map: glowTex,
+    color: 0xffd23f,
+    transparent: true,
+    opacity: 0.6,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+  })
+);
+focoGlow.rotation.x = -Math.PI / 2;
+focoGlow.position.y = 0.03;
+scene.add(focoGlow);
+
+// aro en el suelo
+const focoRing = new THREE.Mesh(
+  new THREE.TorusGeometry(FOCO_R, 0.08, 6, 64),
+  new THREE.MeshBasicMaterial({ color: 0xffe27a })
+);
+focoRing.rotation.x = -Math.PI / 2;
+focoRing.position.y = 0.05;
+scene.add(focoRing);
+
+/* ---------------- rueda de feria al fondo ---------------- */
+const fwGroup = new THREE.Group();
+fwGroup.position.set(-26, 13, -24);
+fwGroup.rotation.y = 0.42;
+
+const fwRing = new THREE.Mesh(
+  new THREE.TorusGeometry(9, 0.13, 6, 40),
+  new THREE.MeshBasicMaterial({ color: 0x8a7aff })
+);
+fwGroup.add(fwRing);
+
+const fwSpokes = new THREE.Group();
+for (let i = 0; i < 12; i++) {
+  const a = (i / 12) * TAU;
+  const pts = [
+    new THREE.Vector3(0, 0, 0),
+    new THREE.Vector3(Math.cos(a) * 9, Math.sin(a) * 9, 0),
+  ];
+  fwSpokes.add(new THREE.Line(
+    new THREE.BufferGeometry().setFromPoints(pts),
+    new THREE.LineBasicMaterial({ color: 0x8a7aff, transparent: true, opacity: 0.6 })
+  ));
+  const gond = new THREE.Mesh(
+    new THREE.SphereGeometry(0.32, 6, 4),
+    new THREE.MeshBasicMaterial({ color: i % 2 ? 0xff8ecf : 0x4dd4ff })
+  );
+  gond.position.set(Math.cos(a) * 9, Math.sin(a) * 9, 0);
+  fwSpokes.add(gond);
+}
+fwGroup.add(fwSpokes);
+
+// patas
+for (const s of [-1, 1]) {
+  const pts = [
+    new THREE.Vector3(0, 0, 0),
+    new THREE.Vector3(s * 5, -13, 0),
+  ];
+  fwGroup.add(new THREE.Line(
+    new THREE.BufferGeometry().setFromPoints(pts),
+    new THREE.LineBasicMaterial({ color: 0x6a52b0, transparent: true, opacity: 0.5 })
+  ));
+}
+scene.add(fwGroup);
+
+/* ---------------- partículas ---------------- */
+const pPositions = new Float32Array(MAX_PARTICLES * 3);
+const pColors    = new Float32Array(MAX_PARTICLES * 3);
+const pData = [];
+
+const particleGeo = new THREE.BufferGeometry();
+particleGeo.setAttribute('position', new THREE.BufferAttribute(pPositions, 3));
+particleGeo.setAttribute('color',    new THREE.BufferAttribute(pColors, 3));
+particleGeo.setDrawRange(0, 0);
+
+const particleSys = new THREE.Points(particleGeo, new THREE.PointsMaterial({
+  size: 0.55,
+  map: glowTex,
+  vertexColors: true,
+  transparent: true,
+  blending: THREE.AdditiveBlending,
+  depthWrite: false,
+  sizeAttenuation: true,
+}));
+particleSys.frustumCulled = false;
+scene.add(particleSys);
+
+function emitSparks(x, y, z, count, speed, colorHex, upward) {
+  const col = new THREE.Color(colorHex);
+  for (let i = 0; i < count && pData.length < MAX_PARTICLES; i++) {
+    const theta = Math.random() * TAU;
+    let phi = Math.random() * Math.PI;
+    if (upward) phi = Math.random() * Math.PI * 0.5;
+    const s = speed * (0.3 + Math.random() * 0.7);
+    const sinPhi = Math.sin(phi);
+    pData.push({
+      x, y, z,
+      vx: sinPhi * Math.cos(theta) * s,
+      vy: upward ? Math.abs(Math.cos(phi)) * s : Math.cos(phi) * s,
+      vz: sinPhi * Math.sin(theta) * s,
+      life: 0.6 + Math.random() * 0.7,
+      maxLife: 1.3,
+      r: col.r, g: col.g, b: col.b,
+    });
+  }
+}
+
+function updateParticles(dt) {
+  for (let i = pData.length - 1; i >= 0; i--) {
+    const p = pData[i];
+    p.life -= dt;
+    if (p.life <= 0) { pData.splice(i, 1); continue; }
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.z += p.vz * dt;
+    p.vy -= 16 * dt;
+    const d = Math.exp(-1.5 * dt);
+    p.vx *= d; p.vz *= d;
+  }
+  const n = pData.length;
+  for (let i = 0; i < n; i++) {
+    const p = pData[i];
+    pPositions[i*3]     = p.x;
+    pPositions[i*3 + 1] = p.y;
+    pPositions[i*3 + 2] = p.z;
+    const a = p.life / p.maxLife;
+    pColors[i*3]     = p.r * a;
+    pColors[i*3 + 1] = p.g * a;
+    pColors[i*3 + 2] = p.b * a;
+  }
+  particleGeo.attributes.position.needsUpdate = true;
+  particleGeo.attributes.color.needsUpdate = true;
+  particleGeo.setDrawRange(0, n);
+}
+
+/* ---------------- ondas de choque ---------------- */
+const SHOCK_POOL = 8;
+const shocks = [];
+for (let i = 0; i < SHOCK_POOL; i++) {
+  const m = new THREE.Mesh(
+    new THREE.TorusGeometry(1, 0.1, 4, 24),
+    new THREE.MeshBasicMaterial({
+      color: 0xffd23f, transparent: true, opacity: 0,
+      blending: THREE.AdditiveBlending, depthWrite: false,
+    })
+  );
+  m.rotation.x = -Math.PI / 2;
+  m.visible = false;
+  scene.add(m);
+  shocks.push({ mesh: m, life: 0, maxLife: 1, maxScale: 1 });
+}
+let shockIdx = 0;
+
+function addShock(x, y, z, maxScale, colorHex, life) {
+  const s = shocks[shockIdx];
+  shockIdx = (shockIdx + 1) % SHOCK_POOL;
+  s.mesh.position.set(x, y, z);
+  s.mesh.scale.setScalar(0.3);
+  s.mesh.material.color.setHex(colorHex);
+  s.mesh.material.opacity = 1;
+  s.mesh.visible = true;
+  s.life = life;
+  s.maxLife = life;
+  s.maxScale = maxScale;
+}
+
+function updateShocks(dt) {
+  for (const s of shocks) {
+    if (s.life <= 0) continue;
+    s.life -= dt;
+    if (s.life <= 0) { s.mesh.visible = false; continue; }
+    const t = 1 - s.life / s.maxLife;
+    s.mesh.scale.setScalar(0.3 + (s.maxScale - 0.3) * t);
+    s.mesh.material.opacity = (1 - t) * 0.8;
+  }
+}
+
+/* ---------------- textos flotantes (sprites) ---------------- */
+const floaters = [];
+
+function addFloater(x, y, z, text, colorHex) {
+  const cw = 192, ch = 48;
+  const cv = document.createElement('canvas');
+  cv.width = cw; cv.height = ch;
+  const g = cv.getContext('2d');
+  g.font = 'bold 34px ui-monospace, monospace';
+  g.textAlign = 'center';
+  g.textBaseline = 'middle';
+  g.fillStyle = '#' + colorHex.toString(16).padStart(6, '0');
+  g.fillText(text, cw / 2, ch / 2);
+  const tex = new THREE.CanvasTexture(cv);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: tex, transparent: true, depthWrite: false,
+  }));
+  sprite.position.set(x, y, z);
+  sprite.scale.set(3, 0.75, 1);
+  scene.add(sprite);
+  floaters.push({ sprite, tex, life: 1.2, maxLife: 1.2 });
+}
+
+function updateFloaters(dt) {
+  for (let i = floaters.length - 1; i >= 0; i--) {
+    const f = floaters[i];
+    f.life -= dt;
+    f.sprite.position.y += 2.2 * dt;
+    f.sprite.material.opacity = clamp(f.life / f.maxLife, 0, 1);
+    if (f.life <= 0) {
+      scene.remove(f.sprite);
+      f.sprite.material.dispose();
+      f.tex.dispose();
+      floaters.splice(i, 1);
+    }
+  }
+}
+
+/* ---------------- coche ---------------- */
+function createCar(index, isPlayer) {
+  const color = COLORS[index];
+  const group = new THREE.Group();
+
+  // cuerpo (cápsula aplastada)
+  const bodyGeo = new THREE.CapsuleGeometry(0.7, 1.0, 4, 12);
+  bodyGeo.rotateX(Math.PI / 2);
+  const body = new THREE.Mesh(bodyGeo, new THREE.MeshStandardMaterial({
+    color, metalness: 0.4, roughness: 0.4,
+    emissive: color, emissiveIntensity: 0.15,
+  }));
+  body.scale.set(1, 0.65, 1);
+  body.position.y = 0.5;
+  group.add(body);
+
+  // pértiga
+  const pole = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.05, 0.05, 1.5, 8),
+    new THREE.MeshStandardMaterial({
+      color: 0xaaaaaa, metalness: 0.9, roughness: 0.2,
+      emissive: 0x223355, emissiveIntensity: 0.5,
+    })
+  );
+  pole.position.y = 1.6;
+  group.add(pole);
+
+  // chispa en la punta
+  const spark = new THREE.Mesh(
+    new THREE.SphereGeometry(0.2, 12, 10),
+    new THREE.MeshBasicMaterial({ color })
+  );
+  spark.position.y = 2.45;
+  group.add(spark);
+
+  // sprite glow
+  const glow = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: glowTex, color, transparent: true,
+    blending: THREE.AdditiveBlending, depthWrite: false,
+  }));
+  glow.position.y = 2.45;
+  glow.scale.setScalar(1.5);
+  group.add(glow);
+
+  // sombra
+  const shadow = new THREE.Mesh(
+    new THREE.CircleGeometry(1.2, 16),
+    new THREE.MeshBasicMaterial({
+      color: 0x000000, transparent: true, opacity: 0.45, depthWrite: false,
+    })
+  );
+  shadow.rotation.x = -Math.PI / 2;
+  shadow.position.y = 0.02;
+  group.add(shadow);
+
+  scene.add(group);
+
+  return {
+    group, body, pole, spark, glow,
+    x: 0, z: 0, vx: 0, vz: 0, angle: 0,
+    r: CAR_R, mass: 1,
+    color, name: NAMES[index], isPlayer,
+    chispa: 0, score: 0, cd: 0,
+    hitFlash: 0, inFoco: false,
+    ai: { greed: 40 + Math.random() * 55, seed: Math.random() * 1000, overTimer: 0 },
+  };
+}
+
+/* ---------------- audio ---------------- */
+let actx = null, master = null;
+
+function ensureAudio() {
   if (actx) return;
-  try{
+  try {
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return;
     actx = new AC();
     master = actx.createGain();
-    master.gain.value = 0.30;
+    master.gain.value = 0.28;
     master.connect(actx.destination);
-  }catch(e){ actx = null; }
+  } catch (e) { actx = null; }
 }
-function audioReady(){
+function audioReady() {
   if (!actx) return false;
   if (actx.state === 'suspended') actx.resume();
   return opts.sound;
 }
 
-function sfxBump(impact){
+function sfxBump(impact) {
   if (!audioReady()) return;
   const t = actx.currentTime;
   const o = actx.createOscillator(), g = actx.createGain();
   o.type = 'square';
-  o.frequency.setValueAtTime(120 + Math.min(360, impact*0.9), t);
+  o.frequency.setValueAtTime(120 + Math.min(360, impact), t);
   o.frequency.exponentialRampToValueAtTime(55, t + 0.11);
   g.gain.setValueAtTime(0.0001, t);
-  g.gain.exponentialRampToValueAtTime(0.22, t + 0.006);
+  g.gain.exponentialRampToValueAtTime(0.20, t + 0.006);
   g.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
   o.connect(g); g.connect(master);
   o.start(t); o.stop(t + 0.2);
 }
 
-function sfxDischarge(power, inFoco){
+function sfxDischarge(power, inFoco) {
   if (!audioReady()) return;
   const t = actx.currentTime;
-  // barrido
   const o = actx.createOscillator(), g = actx.createGain();
   o.type = 'sawtooth';
-  const f0 = inFoco ? 900 : 520;
-  o.frequency.setValueAtTime(f0, t);
-  o.frequency.exponentialRampToValueAtTime(70, t + 0.36);
+  o.frequency.setValueAtTime(inFoco ? 900 : 520, t);
+  o.frequency.exponentialRampToValueAtTime(70, t + 0.38);
   g.gain.setValueAtTime(0.0001, t);
-  g.gain.exponentialRampToValueAtTime(0.20 + power*0.0012, t + 0.01);
-  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.42);
+  g.gain.exponentialRampToValueAtTime(0.18 + power * 0.001, t + 0.01);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.44);
   o.connect(g); g.connect(master);
   o.start(t); o.stop(t + 0.45);
-  // chispa aguda
-  if (inFoco){
+  if (inFoco) {
     const o2 = actx.createOscillator(), g2 = actx.createGain();
     o2.type = 'sine';
     o2.frequency.setValueAtTime(1320, t);
@@ -158,7 +634,7 @@ function sfxDischarge(power, inFoco){
   }
 }
 
-function sfxTone(freq, dur, type, vol){
+function sfxTone(freq, dur, type, vol) {
   if (!audioReady()) return;
   const t = actx.currentTime;
   const o = actx.createOscillator(), g = actx.createGain();
@@ -171,328 +647,263 @@ function sfxTone(freq, dur, type, vol){
   o.start(t); o.stop(t + dur + 0.05);
 }
 
-/* ---------------- partículas ---------------- */
-const particles = [];
-const MAX_PARTICLES = 520;
-
-function addParticle(p){
-  if (particles.length >= MAX_PARTICLES) return;
-  particles.push(p);
-}
-function spawnSparks(x, y, count, speed, color){
-  for (let i=0;i<count;i++){
-    const a = Math.random()*TAU;
-    const s = speed*(0.25 + Math.random()*0.9);
-    addParticle({
-      type:'spark', x, y,
-      vx:Math.cos(a)*s, vy:Math.sin(a)*s,
-      life:0.35 + Math.random()*0.45, maxLife:0.8,
-      color, size:1.2 + Math.random()*1.6
-    });
-  }
-}
-function spawnRing(x, y, maxR, color, life){
-  addParticle({ type:'ring', x, y, r:6, maxR, life:life||0.45, maxLife:life||0.45, color });
-}
-function updateParticles(dt){
-  for (let i=particles.length-1;i>=0;i--){
-    const p = particles[i];
-    p.life -= dt;
-    if (p.life <= 0){ particles.splice(i,1); continue; }
-    if (p.type === 'spark'){
-      p.x += p.vx*dt; p.y += p.vy*dt;
-      const d = Math.exp(-3.5*dt);
-      p.vx *= d; p.vy *= d;
-    } else if (p.type === 'ring'){
-      const t = 1 - p.life/p.maxLife;
-      p.r = 6 + (p.maxR-6)*t;
-    }
-  }
-}
-function drawParticles(){
-  for (const p of particles){
-    const a = clamp(p.life/p.maxLife, 0, 1);
-    if (p.type === 'spark'){
-      ctx.strokeStyle = hexA(p.color, a);
-      ctx.lineWidth = p.size;
-      ctx.lineCap = 'round';
-      ctx.beginPath();
-      ctx.moveTo(p.x, p.y);
-      ctx.lineTo(p.x - p.vx*0.022, p.y - p.vy*0.022);
-      ctx.stroke();
-    } else if (p.type === 'ring'){
-      ctx.strokeStyle = hexA(p.color, a*0.85);
-      ctx.lineWidth = 3*a + 1;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.r, 0, TAU);
-      ctx.stroke();
-    }
-  }
+/* ---------------- física ---------------- */
+function shortAngle(a, b) {
+  let d = b - a;
+  while (d >  Math.PI) d -= TAU;
+  while (d < -Math.PI) d += TAU;
+  return d;
 }
 
-/* ---------------- textos flotantes ---------------- */
-const floaters = [];
-function addFloater(x, y, text, color, big){
-  floaters.push({ x, y, text, color, life:1.1, maxLife:1.1, big:!!big });
-}
-function updateFloaters(dt){
-  for (let i=floaters.length-1;i>=0;i--){
-    const f = floaters[i];
-    f.life -= dt;
-    f.y -= 52*dt;
-    if (f.life <= 0) floaters.splice(i,1);
-  }
-}
+function updateCarPhysics(car, dt, ix, iz) {
+  car.mass = 1 + car.chispa / 180;
+  const mag = Math.hypot(ix, iz);
+  if (mag > 1) { ix /= mag; iz /= mag; }
 
-/* ---------------- creación de coches ---------------- */
-function makeCar(i, isPlayer){
-  const a = -Math.PI/2 + (i/4)*TAU;
-  return {
-    x: arena.x + Math.cos(a)*arena.r*0.58,
-    y: arena.y + Math.sin(a)*arena.r*0.58,
-    vx:0, vy:0,
-    angle: a + Math.PI,
-    r: CAR_R,
-    mass: 1,
-    color: COLORS[i],
-    name: NAMES[i],
-    isPlayer,
-    chispa: 0,
-    score: 0,
-    cd: 0,
-    inFoco: false,
-    hitFlash: 0,
-    ai: {
-      greed: 40 + Math.random()*55,
-      seed: Math.random()*1000,
-      overTimer: 0
-    }
-  };
-}
+  const accel = THRUST / car.mass;
+  car.vx += ix * accel * dt;
+  car.vz += iz * accel * dt;
 
-function startGame(){
-  ensureAudio();
-  cars = [];
-  for (let i=0;i<4;i++) cars.push(makeCar(i, i===0));
-  player = cars[0];
-  state.mode = 'play';
-  state.remaining = state.roundLen;
-  state.time = 0;
-  state.shake = 0;
-  state.flash = 0;
-  state.hitstop = 0;
-  particles.length = 0;
-  floaters.length = 0;
-}
+  const damp = Math.exp(-DAMP * dt);
+  car.vx *= damp;
+  car.vz *= damp;
 
-/* ---------------- física de un coche ---------------- */
-function updateCar(c, dt, ix, iy){
-  c.mass = 1 + c.chispa/180;
-
-  const m = Math.hypot(ix, iy);
-  if (m > 1){ ix/=m; iy/=m; }
-
-  const accel = THRUST / c.mass;
-  c.vx += ix * accel * dt;
-  c.vy += iy * accel * dt;
-
-  const damp = Math.exp(-DAMP*dt);
-  c.vx *= damp;
-  c.vy *= damp;
-
-  const sp = Math.hypot(c.vx, c.vy);
-  if (sp > MAX_SPEED){
-    c.vx = c.vx/sp*MAX_SPEED;
-    c.vy = c.vy/sp*MAX_SPEED;
+  const speed = Math.hypot(car.vx, car.vz);
+  if (speed > MAX_SPEED) {
+    car.vx = car.vx / speed * MAX_SPEED;
+    car.vz = car.vz / speed * MAX_SPEED;
   }
 
-  c.x += c.vx*dt;
-  c.y += c.vy*dt;
+  car.x += car.vx * dt;
+  car.z += car.vz * dt;
 
   // límite circular
-  const dx = c.x - arena.x, dy = c.y - arena.y;
-  const d = Math.hypot(dx, dy) || 1;
-  const lim = arena.r - c.r;
-  if (d > lim){
-    const nx = dx/d, ny = dy/d;
-    c.x = arena.x + nx*lim;
-    c.y = arena.y + ny*lim;
-    const vn = c.vx*nx + c.vy*ny;
-    if (vn > 0){
-      c.vx -= vn*nx*1.55;
-      c.vy -= vn*ny*1.55;
-      if (vn > 140){
-        spawnSparks(c.x - nx*c.r, c.y - ny*c.r, 5, vn*0.5, c.color);
-        state.shake = Math.min(state.shake + vn*0.0012, 6);
-        sfxBump(vn*0.6);
+  const dist = Math.hypot(car.x, car.z) || 1;
+  const lim = ARENA_R - car.r;
+  if (dist > lim) {
+    const nx = car.x / dist, nz = car.z / dist;
+    car.x = nx * lim;
+    car.z = nz * lim;
+    const vn = car.vx * nx + car.vz * nz;
+    if (vn > 0) {
+      car.vx -= vn * nx * 1.55;
+      car.vz -= vn * nz * 1.55;
+      if (vn > 4) {
+        emitSparks(car.x - nx * car.r, 0.5, car.z - nz * car.r, 6, vn * 0.6, car.color);
+        addShake(vn * 0.15);
+        sfxBump(vn * 3);
       }
     }
   }
 
-  // orientación hacia la velocidad
-  if (sp > 25){
-    const target = Math.atan2(c.vy, c.vx);
-    c.angle += angTo(c.angle, target) * (1 - Math.exp(-13*dt));
+  // orientación
+  if (speed > 0.5) {
+    const target = Math.atan2(car.vx, car.vz);
+    car.angle += shortAngle(car.angle, target) * (1 - Math.exp(-13 * dt));
   }
 
-  if (c.cd > 0) c.cd = Math.max(0, c.cd - dt);
-  if (c.hitFlash > 0) c.hitFlash = Math.max(0, c.hitFlash - dt*3.6);
+  if (car.cd > 0) car.cd = Math.max(0, car.cd - dt);
+  if (car.hitFlash > 0) car.hitFlash = Math.max(0, car.hitFlash - dt * 3.6);
+
+  // sincronizar visual
+  car.group.position.set(car.x, 0, car.z);
+  car.group.rotation.y = car.angle;
+
+  const pct = car.chispa / 100;
+  car.spark.scale.setScalar(0.5 + pct * 1.5);
+  car.glow.scale.setScalar(1.0 + pct * 2.5);
+  car.glow.material.opacity = 0.35 + pct * 0.65;
+  car.body.material.emissiveIntensity = 0.15 + pct * 0.55 + (car.inFoco ? 0.3 : 0);
 }
 
-/* ---------------- colisión círculo-círculo ---------------- */
-function collide(a, b){
-  const dx = b.x - a.x, dy = b.y - a.y;
-  const d = Math.hypot(dx, dy);
+function collideCars(a, b) {
+  const dx = b.x - a.x, dz = b.z - a.z;
+  const d = Math.hypot(dx, dz);
   const minD = a.r + b.r;
   if (d >= minD || d < 0.0001) return;
 
-  const nx = dx/d, ny = dy/d;
-  const invA = 1/a.mass, invB = 1/b.mass;
-  const tot = invA + invB;
+  const nx = dx / d, nz = dz / d;
+  const invA = 1 / a.mass, invB = 1 / b.mass;
+  const total = invA + invB;
   const overlap = minD - d;
 
-  a.x -= nx * overlap * (invA/tot);
-  a.y -= ny * overlap * (invA/tot);
-  b.x += nx * overlap * (invB/tot);
-  b.y += ny * overlap * (invB/tot);
+  a.x -= nx * overlap * (invA / total);
+  a.z -= nz * overlap * (invA / total);
+  b.x += nx * overlap * (invB / total);
+  b.z += nz * overlap * (invB / total);
 
-  const rvx = b.vx - a.vx, rvy = b.vy - a.vy;
-  const vn = rvx*nx + rvy*ny;
-  if (vn > 0) return;   // ya se separan
+  const rvx = b.vx - a.vx, rvz = b.vz - a.vz;
+  const vn = rvx * nx + rvz * nz;
+  if (vn > 0) return;
 
-  const j = -(1 + RESTITUTION) * vn / tot;
-  a.vx -= j*nx*invA; a.vy -= j*ny*invA;
-  b.vx += j*nx*invB; b.vy += j*ny*invB;
+  const j = -(1 + RESTITUTION) * vn / total;
+  a.vx -= j * nx * invA;
+  a.vz -= j * nz * invA;
+  b.vx += j * nx * invB;
+  b.vz += j * nz * invB;
 
   const impact = Math.abs(vn);
-  if (impact > 42){
-    const gain = Math.min(40, 4 + impact*0.07);
+  if (impact > 1.2) {
+    const gain = Math.min(40, 4 + impact * 4);
     a.chispa = Math.min(100, a.chispa + gain);
     b.chispa = Math.min(100, b.chispa + gain);
     a.hitFlash = 1;
     b.hitFlash = 1;
 
-    const mx = a.x + nx*a.r, my = a.y + ny*a.r;
-    spawnSparks(mx, my, Math.min(16, 4 + (impact*0.04)|0), impact*0.9, '#ffe9a8');
-    spawnRing(mx, my, 30 + impact*0.12, a.color, 0.3);
+    const mx = a.x + nx * a.r;
+    const mz = a.z + nz * a.r;
+    emitSparks(mx, 0.8, mz, Math.min(16, 4 + (impact * 2.5) | 0), impact * 3, 0xffe9a8);
+    addShock(mx, 0.2, mz, 1.6 + impact * 0.22, 0xffe9a8, 0.35);
 
-    if (opts.shake) state.shake = Math.min(state.shake + impact*0.014, 14);
-    if (opts.flash && impact > 220) state.flash = Math.min(state.flash + 0.10, 0.30);
-
-    if (impact > 210) state.hitstop = Math.min(0.07, impact*0.00022);
-    sfxBump(impact);
+    if (impact > 4) addShake(impact * 0.28);
+    if (impact > 6) state.hitstop = Math.min(0.07, impact * 0.01);
+    sfxBump(impact * 20);
   }
 }
 
 /* ---------------- descarga ---------------- */
-function tryDischarge(c){
-  if (c.cd > 0 || c.chispa < MIN_CHARGE) return false;
+function tryDischarge(car) {
+  if (car.cd > 0 || car.chispa < MIN_CHARGE) return false;
 
-  const inFoco = Math.hypot(c.x - arena.x, c.y - arena.y) < FOCO_R;
-  const power  = c.chispa;
-  const pts    = Math.round(power * (inFoco ? MULT_FOCO : 1));
+  const inFoco = Math.hypot(car.x, car.z) < FOCO_R;
+  const power = car.chispa;
+  const pts = Math.round(power * (inFoco ? MULT_FOCO : 1));
 
-  c.score += pts;
-  c.chispa = 0;
-  c.cd = DISCHARGE_CD;
+  car.score += pts;
+  car.chispa = 0;
+  car.cd = DISCHARGE_CD;
 
-  // onda de choque
-  const RANGE = 140;
-  for (const o of cars){
-    if (o === c) continue;
-    const dx = o.x - c.x, dy = o.y - c.y;
-    const d = Math.hypot(dx, dy) || 1;
-    if (d < RANGE){
-      const f = (1 - d/RANGE) * (340 + power*4.2) / o.mass;
-      o.vx += (dx/d) * f;
-      o.vy += (dy/d) * f;
-      o.chispa = Math.min(100, o.chispa + 5);
-      o.hitFlash = 0.7;
+  // onda expansiva sobre rivales
+  const RANGE = 4.5;
+  for (const other of cars) {
+    if (other === car) continue;
+    const dx = other.x - car.x, dz = other.z - car.z;
+    const d = Math.hypot(dx, dz) || 1;
+    if (d < RANGE) {
+      const f = (1 - d / RANGE) * (3 + power * 0.07) / other.mass;
+      other.vx += (dx / d) * f;
+      other.vz += (dz / d) * f;
+      other.chispa = Math.min(100, other.chispa + 5);
+      other.hitFlash = 0.7;
     }
   }
 
-  // feedback
-  const col = inFoco ? '#ffd23f' : c.color;
-  spawnRing(c.x, c.y, 150 + power*1.1, col, 0.5);
-  spawnSparks(c.x, c.y, inFoco ? 26 : 14, 260 + power*3, col);
-  addFloater(c.x, c.y - c.r - 14, '+' + pts + (inFoco ? '  ×3' : ''), col, inFoco);
+  const col = inFoco ? 0xffd23f : car.color;
+  emitSparks(car.x, 1.5, car.z, inFoco ? 42 : 20, 10 + power * 0.16, col, true);
+  addShock(car.x, 0.15, car.z, 3.5 + power * 0.03, col, 0.5);
+  addFloater(car.x, 3, car.z, '+' + pts + (inFoco ? ' ×3' : ''), col);
 
-  if (opts.shake) state.shake = Math.min(state.shake + (inFoco ? 12 : 6), 22);
-  if (opts.flash && inFoco) state.flash = Math.min(state.flash + 0.35, 0.55);
+  if (inFoco) {
+    addShake(1.2);
+    if (opts.flash) state.flash = Math.min(state.flash + 0.6, 0.75);
+    focoLight.intensity = 90;
+  }
+
+  if (car.isPlayer) {
+    const el = document.getElementById('playerScore');
+    el.classList.add('pop');
+    setTimeout(() => el.classList.remove('pop'), 130);
+  }
 
   sfxDischarge(power, inFoco);
-  if (inFoco) sfxTone(880, 0.16, 'triangle', 0.07);
   return true;
 }
 
 /* ---------------- IA ---------------- */
-function updateAI(c, dt){
-  const ai = c.ai;
-  const distC = Math.hypot(c.x - arena.x, c.y - arena.y);
+function updateAI(car, dt) {
+  const ai = car.ai;
+  const distC = Math.hypot(car.x, car.z);
 
-  let tx = arena.x, ty = arena.y;
-
-  if (c.chispa >= ai.greed){
-    tx = arena.x; ty = arena.y;
+  let tx = 0, tz = 0;
+  if (car.chispa >= ai.greed) {
+    tx = 0; tz = 0;
   } else {
     let best = null, bd = Infinity;
-    for (const o of cars){
-      if (o === c) continue;
-      const d = Math.hypot(o.x - c.x, o.y - c.y);
-      if (d < bd){ bd = d; best = o; }
+    for (const other of cars) {
+      if (other === car) continue;
+      const d = Math.hypot(other.x - car.x, other.z - car.z);
+      if (d < bd) { bd = d; best = other; }
     }
-    if (best){
-      tx = best.x + best.vx*0.22;
-      ty = best.y + best.vy*0.22;
+    if (best) {
+      tx = best.x + best.vx * 0.22;
+      tz = best.z + best.vz * 0.22;
     }
   }
 
-  let dx = tx - c.x, dy = ty - c.y;
-  const dl = Math.hypot(dx, dy) || 1;
-  dx /= dl; dy /= dl;
+  let dx = tx - car.x, dz = tz - car.z;
+  const dl = Math.hypot(dx, dz) || 1;
+  dx /= dl; dz /= dl;
 
-  // evitar paredes
-  const edge = arena.r - 80;
-  if (distC > edge){
-    const w = clamp((distC - edge)/80, 0, 1);
-    const inx = (arena.x - c.x)/distC;
-    const iny = (arena.y - c.y)/distC;
-    dx += inx * w * 2.6;
-    dy += iny * w * 2.6;
-    const l = Math.hypot(dx, dy) || 1;
-    dx /= l; dy /= l;
+  const edge = ARENA_R - 4;
+  if (distC > edge) {
+    const w = clamp((distC - edge) / 4, 0, 1);
+    dx += (-car.x / distC) * w * 2.6;
+    dz += (-car.z / distC) * w * 2.6;
+    const l = Math.hypot(dx, dz) || 1;
+    dx /= l; dz /= l;
   }
 
-  // jitter orgánico para que no se apilen
-  const j = Math.sin(state.time*1.9 + ai.seed) * 0.18;
-  const cj = Math.cos(j), sj = Math.sin(j);
-  const rx = dx*cj - dy*sj;
-  const ry = dx*sj + dy*cj;
+  const jitter = Math.sin(state.time * 1.9 + ai.seed) * 0.18;
+  const cj = Math.cos(jitter), sj = Math.sin(jitter);
+  const rx = dx * cj - dz * sj;
+  const rz = dx * sj + dz * cj;
 
-  updateCar(c, dt, rx, ry);
+  updateCarPhysics(car, dt, rx, rz);
 
-  // decisión de descarga
-  if (c.cd <= 0 && c.chispa >= MIN_CHARGE){
-    const inFocoNow = Math.hypot(c.x - arena.x, c.y - arena.y) < FOCO_R*0.9;
-    if (inFocoNow && c.chispa >= ai.greed){
-      tryDischarge(c);
+  if (car.cd <= 0 && car.chispa >= MIN_CHARGE) {
+    const inFoco = Math.hypot(car.x, car.z) < FOCO_R * 0.9;
+    if (inFoco && car.chispa >= ai.greed) {
+      tryDischarge(car);
       ai.overTimer = 0;
-    } else if (c.chispa >= 92){
+    } else if (car.chispa >= 92) {
       ai.overTimer += dt;
-      if (ai.overTimer > 2.2){   // demasiado cargado = demasiado lento
-        tryDischarge(c);
-        ai.overTimer = 0;
-      }
+      if (ai.overTimer > 2.2) { tryDischarge(car); ai.overTimer = 0; }
     } else {
       ai.overTimer = 0;
     }
   }
 }
 
+/* ---------------- cámara ---------------- */
+const camPos = new THREE.Vector3(0, 20, 12);
+const camLookAt = new THREE.Vector3(0, 0, 0);
+
+function addShake(amount) {
+  if (!opts.shake) return;
+  state.shake = Math.min(state.shake + amount, 3.5);
+}
+
+function updateCamera(dt) {
+  if (!player) return;
+
+  const speed = Math.hypot(player.vx, player.vz);
+  const tx = player.x * 0.5 + player.vx * 0.08;
+  const tz = player.z * 0.5 + player.vz * 0.08;
+
+  const k = 1 - Math.exp(-5 * dt);
+  camPos.x += (tx - camPos.x) * k;
+  camPos.y += (20 - camPos.y) * k;
+  camPos.z += ((tz + 12) - camPos.z) * k;
+
+  camera.position.copy(camPos);
+  if (opts.shake && state.shake > 0.05) {
+    camera.position.x += (Math.random() - 0.5) * state.shake * 0.35;
+    camera.position.y += (Math.random() - 0.5) * state.shake * 0.22;
+    camera.position.z += (Math.random() - 0.5) * state.shake * 0.35;
+  }
+
+  camLookAt.set(tx, 0, tz);
+  camera.lookAt(camLookAt);
+
+  const targetFov = 58 + (speed / MAX_SPEED) * 12;
+  camera.fov += (targetFov - camera.fov) * (1 - Math.exp(-5 * dt));
+  camera.updateProjectionMatrix();
+}
+
 /* ---------------- input ---------------- */
 const keys = Object.create(null);
-let touchStick = null;
-const touchVec = { x:0, y:0 };
+let stick = null;
+const stickVec = { x: 0, z: 0 };
 
 window.addEventListener('keydown', e => {
   const k = e.key.toLowerCase();
@@ -502,528 +913,334 @@ window.addEventListener('keydown', e => {
   ensureAudio();
   if (actx && actx.state === 'suspended') actx.resume();
 
-  if (k === ' '){
-    if (state.mode === 'play' && player) tryDischarge(player);
-    else if (state.mode === 'menu') startGame();
-    else if (state.mode === 'over' && state.endTimer > 0.6) startGame();
+  if (k === ' ' || k === 'enter') {
+    if (state.mode === 'play' && player && k === ' ') tryDischarge(player);
+    else if (state.mode === 'menu') startRound();
+    else if (state.mode === 'over' && state.endTimer > 0.6) startRound();
   }
-  if (k === 'enter'){
-    if (state.mode === 'menu') startGame();
-    else if (state.mode === 'over' && state.endTimer > 0.6) startGame();
-  }
-  if (k === 'r' && state.mode === 'play') startGame();
+  if (k === 'r' && state.mode === 'play') startRound();
 });
 window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
 window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
 
-function readInput(){
-  let x = 0, y = 0;
+function readInput() {
+  let x = 0, z = 0;
   if (keys['a'] || keys['arrowleft'])  x -= 1;
   if (keys['d'] || keys['arrowright']) x += 1;
-  if (keys['w'] || keys['arrowup'])    y -= 1;
-  if (keys['s'] || keys['arrowdown'])  y += 1;
-  if (touchStick){
-    x += touchVec.x;
-    y += touchVec.y;
-  }
-  return { x, y };
+  if (keys['w'] || keys['arrowup'])    z -= 1;
+  if (keys['s'] || keys['arrowdown'])  z += 1;
+  if (stick) { x += stickVec.x; z += stickVec.z; }
+  return { x, z };
 }
 
-/* touch */
 canvas.addEventListener('pointerdown', e => {
   ensureAudio();
   if (actx && actx.state === 'suspended') actx.resume();
 
-  if (state.mode !== 'play'){
-    if (state.mode === 'menu' || state.endTimer > 0.6) startGame();
+  if (state.mode !== 'play') {
+    if (state.mode === 'menu' || state.endTimer > 0.6) startRound();
     return;
   }
-  if (e.pointerType === 'touch'){
-    if (e.clientX < W/2 && !touchStick){
-      touchStick = { id:e.pointerId, ox:e.clientX, oy:e.clientY, cx:e.clientX, cy:e.clientY };
-      touchVec.x = 0; touchVec.y = 0;
-    } else if (e.clientX >= W/2 && player){
+  if (e.pointerType === 'touch') {
+    if (e.clientX < window.innerWidth / 2 && !stick) {
+      stick = { id: e.pointerId, ox: e.clientX, oy: e.clientY, cx: e.clientX, cy: e.clientY };
+      stickVec.x = 0; stickVec.z = 0;
+    } else if (e.clientX >= window.innerWidth / 2 && player) {
       tryDischarge(player);
     }
   }
-}, { passive:true });
+}, { passive: true });
 
 canvas.addEventListener('pointermove', e => {
-  if (!touchStick || e.pointerId !== touchStick.id) return;
-  touchStick.cx = e.clientX;
-  touchStick.cy = e.clientY;
+  if (!stick || e.pointerId !== stick.id) return;
+  stick.cx = e.clientX;
+  stick.cy = e.clientY;
   const R = 60;
-  let dx = e.clientX - touchStick.ox;
-  let dy = e.clientY - touchStick.oy;
+  let dx = e.clientX - stick.ox;
+  let dy = e.clientY - stick.oy;
   const d = Math.hypot(dx, dy);
-  if (d > R){ dx = dx/d*R; dy = dy/d*R; }
-  touchVec.x = dx/R;
-  touchVec.y = dy/R;
-}, { passive:true });
+  if (d > R) { dx = dx / d * R; dy = dy / d * R; }
+  stickVec.x = dx / R;
+  stickVec.z = dy / R;
+}, { passive: true });
 
-function endTouch(e){
-  if (touchStick && e.pointerId === touchStick.id){
-    touchStick = null;
-    touchVec.x = 0; touchVec.y = 0;
+function endStick(e) {
+  if (stick && e.pointerId === stick.id) {
+    stick = null; stickVec.x = 0; stickVec.z = 0;
   }
 }
-canvas.addEventListener('pointerup', endTouch, { passive:true });
-canvas.addEventListener('pointercancel', endTouch, { passive:true });
+canvas.addEventListener('pointerup', endStick, { passive: true });
+canvas.addEventListener('pointercancel', endStick, { passive: true });
 
-/* ---------------- update global ---------------- */
-function update(rawDt){
-  state.time += rawDt;
-  state.shake   *= Math.exp(-7.5*rawDt);
-  state.flash   *= Math.exp(-5.5*rawDt);
-  state.endTimer += rawDt;
+/* ---------------- HUD / overlay ---------------- */
+const playerScoreEl = document.getElementById('playerScore');
+const chargeFillEl  = document.getElementById('chargeFill');
+const chargeHintEl  = document.getElementById('chargeHint');
+const timerEl       = document.getElementById('timer');
+const rivalsEl      = document.getElementById('hud-right');
+const overlayEl     = document.getElementById('overlay');
+const overlayContent = document.getElementById('overlayContent');
+const flashEl       = document.getElementById('flash');
 
-  if (state.hitstop > 0){
-    state.hitstop -= rawDt;
-    return; // congelamos la simulación: el impacto se "siente"
+function buildRivalsHUD() {
+  rivalsEl.innerHTML = '';
+  for (let i = 1; i < 4; i++) {
+    const c = cars[i];
+    const hex = c.color.toString(16).padStart(6, '0');
+    const div = document.createElement('div');
+    div.className = 'rival';
+    div.innerHTML =
+      `<div class="rival-score" style="color:#${hex}">0</div>` +
+      `<div class="rival-name">${c.name}</div>`;
+    rivalsEl.appendChild(div);
+  }
+}
+
+function updateHUD() {
+  if (!player) return;
+  playerScoreEl.textContent = player.score;
+  const pct = player.chispa / 100;
+  chargeFillEl.style.width = (pct * 100) + '%';
+  const ready = player.chispa >= MIN_CHARGE;
+  chargeFillEl.classList.toggle('ready', ready);
+  chargeHintEl.classList.toggle('ready', ready);
+  chargeHintEl.textContent = ready ? 'ESPACIO → DESCARGAR' : 'CHOCA PARA CARGAR';
+  timerEl.textContent = fmtTime(state.remaining);
+  timerEl.classList.toggle('low', state.remaining <= 10);
+  const kids = rivalsEl.children;
+  for (let i = 1; i < 4; i++) {
+    if (kids[i-1]) kids[i-1].querySelector('.rival-score').textContent = cars[i].score;
+  }
+}
+
+function fmtTime(s) {
+  s = Math.max(0, Math.ceil(s));
+  const m = Math.floor(s / 60), r = s % 60;
+  return m + ':' + (r < 10 ? '0' : '') + r;
+}
+
+function showMenu() {
+  overlayContent.innerHTML =
+    `<h1>CHISPAS</h1>` +
+    `<p class="sub">3 D · F E R I A   N O C T U R N A</p>` +
+    `<p class="howto">Choca para cargar chispa.<br>` +
+    `Descárgala <strong>dentro del haz de luz central</strong> → ×3 puntos.</p>` +
+    `<p class="controls">WASD / Flechas  ·  ESPACIO descargar</p>` +
+    `<p class="cta">PULSA  ESPACIO  PARA JUGAR</p>`;
+  overlayEl.classList.add('show');
+}
+
+function showGameOver() {
+  const sorted = cars.slice().sort((a, b) => b.score - a.score);
+  const winner = sorted[0];
+  let ranking = '<ul class="ranking">';
+  for (let i = 0; i < sorted.length; i++) {
+    const c = sorted[i];
+    const hex = c.color.toString(16).padStart(6, '0');
+    ranking += `<li style="color:#${hex};opacity:${c.isPlayer ? 1 : 0.8}">` +
+               `${i+1}.&nbsp;&nbsp;${c.name.padEnd(6,' ')}&nbsp;&nbsp;${c.score}</li>`;
+  }
+  ranking += '</ul>';
+  overlayContent.innerHTML =
+    `<h1>FIN DE RONDA</h1>` +
+    `<p class="winner" style="color:#${winner.color.toString(16).padStart(6,'0')}">` +
+      (winner.isPlayer ? '¡GANAS TÚ!' : 'GANA ' + winner.name) +
+      ' · ' + winner.score + ' pts</p>' +
+    ranking +
+    `<p class="cta">ESPACIO / ENTER · REVANCHA</p>`;
+  overlayEl.classList.add('show');
+}
+
+/* ---------------- ciclo de ronda ---------------- */
+function startRound() {
+  ensureAudio();
+
+  // limpiar efectos
+  pData.length = 0;
+  particleGeo.setDrawRange(0, 0);
+  for (const f of floaters) {
+    scene.remove(f.sprite);
+    f.sprite.material.dispose();
+    f.tex.dispose();
+  }
+  floaters.length = 0;
+  for (const s of shocks) { s.life = 0; s.mesh.visible = false; }
+
+  // crear / resetear coches
+  if (cars.length === 0) {
+    for (let i = 0; i < 4; i++) cars.push(createCar(i, i === 0));
+  }
+  for (let i = 0; i < 4; i++) {
+    const a = -Math.PI / 2 + (i / 4) * TAU;
+    const c = cars[i];
+    c.x = Math.cos(a) * ARENA_R * 0.55;
+    c.z = Math.sin(a) * ARENA_R * 0.55;
+    c.vx = 0; c.vz = 0;
+    c.angle = a + Math.PI;
+    c.chispa = 0; c.score = 0; c.cd = 0;
+    c.hitFlash = 0; c.mass = 1; c.inFoco = false;
+    c.ai.greed = 40 + Math.random() * 55;
+    c.ai.overTimer = 0;
+    c.group.position.set(c.x, 0, c.z);
+    c.group.rotation.y = c.angle;
+  }
+  player = cars[0];
+  buildRivalsHUD();
+
+  state.mode = 'play';
+  state.remaining = ROUND_LEN;
+  state.time = 0;
+  state.shake = 0;
+  state.flash = 0;
+  state.hitstop = 0;
+  state.endTimer = 0;
+
+  camPos.set(0, 20, 12);
+  overlayEl.classList.remove('show');
+  updateHUD();
+}
+
+function endRound() {
+  state.mode = 'over';
+  state.endTimer = 0;
+  showGameOver();
+  sfxTone(440, 0.5, 'triangle', 0.1);
+}
+
+/* ---------------- update principal ---------------- */
+function update(dt) {
+  state.time += dt;
+  state.shake *= Math.exp(-8 * dt);
+  state.flash *= Math.exp(-5.5 * dt);
+  state.endTimer += dt;
+
+  // flash DOM
+  flashEl.style.opacity = (opts.flash && state.flash > 0.01)
+    ? (state.flash * 0.55).toFixed(3) : '0';
+
+  // ambiente (siempre)
+  const pulse = 0.5 + 0.5 * Math.sin(state.time * 2.6);
+  focoLight.intensity += ((opts.flash && state.flash > 0.1 ? 90 : 40) - focoLight.intensity) * (1 - Math.exp(-6 * dt));
+  beamMat.opacity = 0.14 + pulse * 0.08;
+  focoGlow.material.opacity = 0.45 + pulse * 0.2;
+  for (let i = 0; i < bulbs.length; i++) {
+    const p = 0.5 + 0.5 * Math.sin(state.time * 3 + i * 0.7);
+    bulbs[i].material.color.setRGB(1, 0.82, 0.25);
+    bulbs[i].material.color.multiplyScalar(0.5 + p * 0.5);
+    bulbs[i].scale.setScalar(0.8 + p * 0.4);
+  }
+  fwSpokes.rotation.z += dt * 0.15;
+
+  if (state.hitstop > 0) {
+    state.hitstop -= dt;
+    updateCamera(dt);
+    updateParticles(dt);
+    updateShocks(dt);
+    updateFloaters(dt);
+    return;
   }
 
-  if (state.mode === 'play'){
-    state.remaining -= rawDt;
-    if (state.remaining <= 0){
+  if (state.mode === 'play') {
+    state.remaining -= dt;
+    if (state.remaining <= 0) {
       state.remaining = 0;
-      state.mode = 'over';
-      state.endTimer = 0;
-      sfxTone(440, 0.5, 'triangle', 0.10);
+      endRound();
       return;
     }
 
     const input = readInput();
-    for (const c of cars){
-      if (c.isPlayer) updateCar(c, rawDt, input.x, input.y);
-      else updateAI(c, rawDt);
+    for (const c of cars) {
+      if (c.isPlayer) updateCarPhysics(c, dt, input.x, input.z);
+      else updateAI(c, dt);
     }
 
-    for (let i=0;i<cars.length;i++)
-      for (let j=i+1;j<cars.length;j++)
-        collide(cars[i], cars[j]);
+    for (let i = 0; i < cars.length; i++)
+      for (let j = i + 1; j < cars.length; j++)
+        collideCars(cars[i], cars[j]);
 
-    for (const c of cars){
-      c.inFoco = Math.hypot(c.x - arena.x, c.y - arena.y) < FOCO_R;
+    for (const c of cars) {
+      c.inFoco = Math.hypot(c.x, c.z) < FOCO_R;
     }
+
+    updateHUD();
   }
 
-  updateParticles(rawDt);
-  updateFloaters(rawDt);
+  updateCamera(dt);
+  updateParticles(dt);
+  updateShocks(dt);
+  updateFloaters(dt);
 }
 
 /* ---------------- render ---------------- */
-function render(){
-  // reset transform + shake
-  let sx = 0, sy = 0;
-  if (opts.shake && state.shake > 0.15){
-    sx = (Math.random()-0.5) * state.shake;
-    sy = (Math.random()-0.5) * state.shake;
-  }
-  ctx.setTransform(DPR,0,0,DPR,0,0);
-  ctx.translate(sx, sy);
-
-  // fondo
-  const bg = ctx.createRadialGradient(W*0.5, H*0.55, 40, W*0.5, H*0.55, Math.max(W,H)*0.85);
-  bg.addColorStop(0, '#151030');
-  bg.addColorStop(0.55, '#0a0718');
-  bg.addColorStop(1, '#05030c');
-  ctx.fillStyle = bg;
-  ctx.fillRect(-40, -40, W+80, H+80);
-
-  drawFerrisWheel();
-
-  // suelo de la arena
-  const floor = ctx.createRadialGradient(arena.x, arena.y, 10, arena.x, arena.y, arena.r);
-  floor.addColorStop(0, '#1e1740');
-  floor.addColorStop(0.75, '#120d26');
-  floor.addColorStop(1, '#0b0817');
-  ctx.fillStyle = floor;
-  ctx.beginPath(); ctx.arc(arena.x, arena.y, arena.r, 0, TAU); ctx.fill();
-
-  // anillos del suelo
-  ctx.strokeStyle = 'rgba(120,100,200,0.075)';
-  ctx.lineWidth = 1;
-  for (let i=1;i<=4;i++){
-    ctx.beginPath();
-    ctx.arc(arena.x, arena.y, arena.r*(i/5), 0, TAU);
-    ctx.stroke();
-  }
-
-  drawStringLights();
-  drawFoco();
-
-  // partículas bajo los coches
-  drawParticles();
-
-  // coches
-  for (const c of cars) drawCar(c);
-
-  drawFloaters();
-  drawHUD();
-  drawTouchStick();
-
-  // flash global (accesible: se puede desactivar)
-  if (opts.flash && state.flash > 0.01){
-    ctx.fillStyle = `rgba(255,225,140,${state.flash*0.5})`;
-    ctx.fillRect(-40, -40, W+80, H+80);
-  }
-
-  if (state.mode === 'menu') drawMenu();
-  if (state.mode === 'over') drawGameOver();
-}
-
-function drawFerrisWheel(){
-  const cx = W*0.12, cy = H*0.20;
-  const R  = Math.min(W,H)*0.14;
-  ctx.save();
-  ctx.globalAlpha = 0.10;
-  ctx.strokeStyle = '#7a63d6';
-  ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.arc(cx, cy, R, 0, TAU); ctx.stroke();
-  const rot = state.time*0.18;
-  for (let i=0;i<10;i++){
-    const a = rot + (i/10)*TAU;
-    ctx.beginPath();
-    ctx.moveTo(cx, cy);
-    ctx.lineTo(cx + Math.cos(a)*R, cy + Math.sin(a)*R);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.arc(cx + Math.cos(a)*R, cy + Math.sin(a)*R, 3.2, 0, TAU);
-    ctx.fillStyle = '#9f8ae8';
-    ctx.fill();
-  }
-  ctx.restore();
-}
-
-function drawStringLights(){
-  const N = 26;
-  const R = arena.r + 34;
-  for (let i=0;i<N;i++){
-    const a = (i/N)*TAU + state.time*0.04;
-    const x = arena.x + Math.cos(a)*R;
-    const y = arena.y + Math.sin(a)*R;
-    const pulse = 0.45 + 0.55*Math.sin(state.time*2.2 + i*0.9);
-    const alpha = 0.15 + pulse*0.35 + state.flash*1.2;
-    ctx.fillStyle = `rgba(255,216,120,${clamp(alpha,0,1)*0.8})`;
-    ctx.beginPath();
-    ctx.arc(x, y, 2.4 + pulse*1.6, 0, TAU);
-    ctx.fill();
-  }
-  // aro de la arena
-  ctx.strokeStyle = 'rgba(150,120,255,0.35)';
-  ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.arc(arena.x, arena.y, arena.r, 0, TAU); ctx.stroke();
-}
-
-function drawFoco(){
-  const pulse = 0.5 + 0.5*Math.sin(state.time*2.6);
-  const R = FOCO_R;
-
-  const g = ctx.createRadialGradient(arena.x, arena.y, 0, arena.x, arena.y, R);
-  g.addColorStop(0, `rgba(255,226,140,${0.30 + pulse*0.12})`);
-  g.addColorStop(0.6, `rgba(255,180,60,${0.10 + pulse*0.06})`);
-  g.addColorStop(1, 'rgba(255,150,40,0)');
-  ctx.fillStyle = g;
-  ctx.beginPath(); ctx.arc(arena.x, arena.y, R, 0, TAU); ctx.fill();
-
-  ctx.strokeStyle = `rgba(255,214,120,${0.35 + pulse*0.25})`;
-  ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.arc(arena.x, arena.y, R, 0, TAU); ctx.stroke();
-
-  // aro discontinuo giratorio
-  ctx.save();
-  ctx.translate(arena.x, arena.y);
-  ctx.rotate(state.time*0.7);
-  ctx.strokeStyle = `rgba(255,240,180,${0.18 + pulse*0.14})`;
-  ctx.lineWidth = 1.5;
-  ctx.setLineDash([10, 14]);
-  ctx.beginPath(); ctx.arc(0, 0, R*0.80, 0, TAU); ctx.stroke();
-  ctx.setLineDash([]);
-  ctx.restore();
-}
-
-function drawCar(c){
-  const sp = c.chispa/100;
-  ctx.save();
-  ctx.translate(c.x, c.y);
-
-  // glow
-  const glowR = c.r * (1.9 + sp*1.3);
-  const g = ctx.createRadialGradient(0,0,0,0,0,glowR);
-  g.addColorStop(0, hexA(c.color, 0.26 + sp*0.30));
-  g.addColorStop(1, hexA(c.color, 0));
-  ctx.fillStyle = g;
-  ctx.beginPath(); ctx.arc(0,0,glowR,0,TAU); ctx.fill();
-
-  ctx.rotate(c.angle);
-
-  // parachoques
-  ctx.strokeStyle = hexA(c.color, 0.85);
-  ctx.lineWidth = 4;
-  ctx.beginPath(); ctx.arc(0,0,c.r,0,TAU); ctx.stroke();
-
-  // carrocería
-  ctx.fillStyle = '#141026';
-  roundRect(ctx, -c.r*0.74, -c.r*0.60, c.r*1.52, c.r*1.20, 7);
-  ctx.fill();
-  ctx.strokeStyle = hexA(c.color, 0.5);
-  ctx.lineWidth = 1.8;
-  ctx.stroke();
-
-  // parabrisas
-  ctx.fillStyle = hexA(c.color, 0.22);
-  roundRect(ctx, -c.r*0.10, -c.r*0.42, c.r*0.55, c.r*0.84, 4);
-  ctx.fill();
-
-  // faro delantero
-  ctx.fillStyle = hexA(c.color, 0.95);
-  ctx.beginPath(); ctx.arc(c.r*0.60, 0, 3.1, 0, TAU); ctx.fill();
-
-  ctx.restore();
-
-  // pértiga / chispa central
-  const pr = 2.6 + sp*3.4;
-  const gg = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, pr*3.2);
-  gg.addColorStop(0, `rgba(255,255,230,${0.55 + sp*0.45})`);
-  gg.addColorStop(1, 'rgba(255,220,120,0)');
-  ctx.fillStyle = gg;
-  ctx.beginPath(); ctx.arc(c.x, c.y, pr*3.2, 0, TAU); ctx.fill();
-
-  // hit flash
-  if (c.hitFlash > 0.01){
-    ctx.fillStyle = `rgba(255,255,255,${c.hitFlash*0.55})`;
-    ctx.beginPath(); ctx.arc(c.x, c.y, c.r + 4, 0, TAU); ctx.fill();
-  }
-
-  // arco de chispa encima
-  if (c.chispa > 1){
-    const r = c.r + 11;
-    const a0 = -Math.PI*0.85;
-    const a1 = a0 + (c.chispa/100) * Math.PI*1.7;
-    ctx.strokeStyle = 'rgba(255,255,255,0.10)';
-    ctx.lineWidth = 4;
-    ctx.beginPath(); ctx.arc(c.x, c.y, r, a0, a0 + Math.PI*1.7); ctx.stroke();
-    ctx.strokeStyle = c.chispa >= MIN_CHARGE ? '#ffe27a' : hexA(c.color, 0.95);
-    ctx.lineWidth = 4;
-    ctx.lineCap = 'round';
-    ctx.beginPath(); ctx.arc(c.x, c.y, r, a0, a1); ctx.stroke();
-  }
-
-  // marca de jugador
-  if (c.isPlayer){
-    ctx.strokeStyle = 'rgba(255,255,255,0.22)';
-    ctx.lineWidth = 1.2;
-    ctx.beginPath(); ctx.arc(c.x, c.y, c.r + 18, 0, TAU); ctx.stroke();
-  }
-}
-
-function drawFloaters(){
-  ctx.textAlign = 'center';
-  for (const f of floaters){
-    const a = clamp(f.life/f.maxLife, 0, 1);
-    ctx.font = `700 ${f.big ? 24 : 17}px ui-monospace, monospace`;
-    ctx.fillStyle = hexA(f.color, a);
-    ctx.fillText(f.text, f.x, f.y);
-  }
-}
-
-function drawHUD(){
-  if (state.mode === 'menu') return;
-
-  ctx.textBaseline = 'top';
-
-  // --- jugador ---
-  ctx.textAlign = 'left';
-  ctx.font = '600 11px ui-monospace, monospace';
-  ctx.fillStyle = 'rgba(255,210,63,0.7)';
-  ctx.fillText('TÚ', 24, 22);
-  ctx.font = '700 34px ui-monospace, monospace';
-  ctx.fillStyle = '#ffd23f';
-  ctx.fillText(String(player ? player.score : 0), 24, 38);
-
-  // barra de chispa
-  const bw = 168, bh = 9, bx = 24, by = 82;
-  ctx.fillStyle = 'rgba(255,255,255,0.08)';
-  roundRect(ctx, bx, by, bw, bh, 5); ctx.fill();
-  const pct = player ? player.chispa/100 : 0;
-  if (pct > 0){
-    const ready = player.chispa >= MIN_CHARGE;
-    ctx.fillStyle = ready ? '#ffe27a' : 'rgba(255,210,63,0.55)';
-    roundRect(ctx, bx, by, Math.max(4, bw*pct), bh, 5); ctx.fill();
-  }
-  ctx.font = '600 10px ui-monospace, monospace';
-  ctx.fillStyle = ready(player) ? '#ffe27a' : 'rgba(200,190,230,0.5)';
-  ctx.fillText(ready(player) ? 'ESPACIO → DESCARGAR' : 'CHOCA PARA CARGAR', bx, by + 15);
-
-  // --- temporizador ---
-  ctx.textAlign = 'center';
-  ctx.font = '700 26px ui-monospace, monospace';
-  const lowTime = state.remaining <= 10;
-  ctx.fillStyle = lowTime ? '#ff4d6d' : 'rgba(230,225,255,0.85)';
-  ctx.fillText(fmtTime(state.remaining), W/2, 22);
-
-  // --- rivales ---
-  ctx.textAlign = 'right';
-  let y = 24;
-  for (let i=1;i<cars.length;i++){
-    const c = cars[i];
-    ctx.font = '700 15px ui-monospace, monospace';
-    ctx.fillStyle = hexA(c.color, 0.9);
-    ctx.fillText(String(c.score), W - 24, y);
-    ctx.font = '600 10px ui-monospace, monospace';
-    ctx.fillStyle = hexA(c.color, 0.45);
-    ctx.fillText(c.name, W - 24 - 46, y + 3);
-    y += 24;
-  }
-}
-function ready(p){ return !!p && p.chispa >= MIN_CHARGE; }
-
-function fmtTime(s){
-  s = Math.max(0, Math.ceil(s));
-  const m = Math.floor(s/60), r = s%60;
-  return m + ':' + (r<10?'0':'') + r;
-}
-
-function drawTouchStick(){
-  if (!touchStick) return;
-  ctx.save();
-  ctx.globalAlpha = 0.35;
-  ctx.strokeStyle = '#ffd23f';
-  ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.arc(touchStick.ox, touchStick.oy, 60, 0, TAU); ctx.stroke();
-  ctx.fillStyle = '#ffd23f';
-  ctx.beginPath(); ctx.arc(touchStick.cx, touchStick.cy, 22, 0, TAU); ctx.fill();
-  ctx.restore();
-}
-
-function drawMenu(){
-  ctx.fillStyle = 'rgba(5,3,12,0.62)';
-  ctx.fillRect(-40,-40,W+80,H+80);
-
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-
-  const cy = H*0.42;
-
-  ctx.font = '800 ' + Math.min(72, W*0.11) + 'px ui-monospace, monospace';
-  ctx.fillStyle = '#ffd23f';
-  ctx.shadowColor = 'rgba(255,210,63,0.55)';
-  ctx.shadowBlur = 32;
-  ctx.fillText('CHISPAS', W/2, cy);
-  ctx.shadowBlur = 0;
-
-  ctx.font = '600 12px ui-monospace, monospace';
-  ctx.fillStyle = 'rgba(190,180,225,0.75)';
-  ctx.fillText('F E R I A   N O C T U R N A', W/2, cy + 46);
-
-  ctx.font = '500 14px ui-monospace, monospace';
-  ctx.fillStyle = 'rgba(230,225,255,0.82)';
-  ctx.fillText('Choca para cargar chispa.', W/2, cy + 96);
-  ctx.fillStyle = 'rgba(255,210,63,0.9)';
-  ctx.fillText('Descárgala dentro del foco central → ×3 puntos.', W/2, cy + 118);
-
-  ctx.fillStyle = 'rgba(180,170,215,0.6)';
-  ctx.font = '500 12px ui-monospace, monospace';
-  ctx.fillText('WASD / Flechas  ·  ESPACIO descargar', W/2, cy + 156);
-
-  const blink = 0.5 + 0.5*Math.sin(state.time*3.4);
-  ctx.font = '700 15px ui-monospace, monospace';
-  ctx.fillStyle = `rgba(255,255,255,${0.45 + blink*0.5})`;
-  ctx.fillText('PULSA  ESPACIO  PARA JUGAR', W/2, cy + 200);
-}
-
-function drawGameOver(){
-  ctx.fillStyle = 'rgba(5,3,12,0.72)';
-  ctx.fillRect(-40,-40,W+80,H+80);
-
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-
-  const sorted = cars.slice().sort((a,b)=> b.score - a.score);
-
-  ctx.font = '800 44px ui-monospace, monospace';
-  ctx.fillStyle = '#ffd23f';
-  ctx.fillText('FIN DE RONDA', W/2, H*0.26);
-
-  const winner = sorted[0];
-  ctx.font = '700 18px ui-monospace, monospace';
-  ctx.fillStyle = hexA(winner.color, 0.95);
-  ctx.fillText(
-    (winner.isPlayer ? '¡GANAS TÚ!' : 'GANA ' + winner.name) + '  ·  ' + winner.score + ' pts',
-    W/2, H*0.33
-  );
-
-  let y = H*0.42;
-  for (let i=0;i<sorted.length;i++){
-    const c = sorted[i];
-    ctx.font = '700 20px ui-monospace, monospace';
-    ctx.fillStyle = hexA(c.color, c.isPlayer ? 1 : 0.8);
-    ctx.fillText((i+1) + '.  ' + c.name.padEnd(6,' ') + '  ' + String(c.score).padStart(5,' '), W/2, y);
-    y += 34;
-  }
-
-  if (state.endTimer > 0.6){
-    const blink = 0.5 + 0.5*Math.sin(state.time*3.4);
-    ctx.font = '700 14px ui-monospace, monospace';
-    ctx.fillStyle = `rgba(255,255,255,${0.4 + blink*0.45})`;
-    ctx.fillText('ESPACIO / ENTER  ·  REVANCHA', W/2, y + 44);
-  }
+function render() {
+  if (opts.bloom) composer.render();
+  else renderer.render(scene, camera);
 }
 
 /* ---------------- loop ---------------- */
 let last = performance.now();
-function frame(now){
+function frame(now) {
   let dt = (now - last) / 1000;
   last = now;
-  if (dt > 1/25) dt = 1/25;   // clamp: evita saltos al volver de otra pestaña
+  if (dt > 1 / 25) dt = 1 / 25;
   update(dt);
   render();
   requestAnimationFrame(frame);
 }
 
 /* ---------------- resize ---------------- */
-function resize(){
-  DPR = Math.min(window.devicePixelRatio || 1, 2);
-  W = window.innerWidth;
-  H = window.innerHeight;
-  canvas.width  = Math.floor(W*DPR);
-  canvas.height = Math.floor(H*DPR);
-  canvas.style.width  = W + 'px';
-  canvas.style.height = H + 'px';
-  arena.x = W/2;
-  arena.y = H/2;
-  arena.r = Math.min(W, H) * 0.44;
-  FOCO_R  = arena.r * 0.30;
+function resize() {
+  const w = window.innerWidth, h = window.innerHeight;
+  renderer.setSize(w, h);
+  composer.setSize(w, h);
+  bloomPass.setSize(w * 0.5, h * 0.5);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
 }
 window.addEventListener('resize', resize);
 
-/* ---------------- botones de accesibilidad ---------------- */
+/* ---------------- botones ---------------- */
 const btnSound = document.getElementById('btnSound');
 const btnShake = document.getElementById('btnShake');
 const btnFlash = document.getElementById('btnFlash');
+const btnBloom = document.getElementById('btnBloom');
 
-function syncButtons(){
+function syncButtons() {
   btnSound.classList.toggle('off', !opts.sound);
   btnShake.classList.toggle('off', !opts.shake);
   btnFlash.classList.toggle('off', !opts.flash);
+  btnBloom.classList.toggle('off', !opts.bloom);
   btnSound.setAttribute('aria-pressed', String(opts.sound));
   btnShake.setAttribute('aria-pressed', String(opts.shake));
   btnFlash.setAttribute('aria-pressed', String(opts.flash));
+  btnBloom.setAttribute('aria-pressed', String(opts.bloom));
 }
 btnSound.addEventListener('click', () => {
   opts.sound = !opts.sound;
-  if (opts.sound){ ensureAudio(); if (actx) actx.resume(); }
+  if (opts.sound) { ensureAudio(); if (actx) actx.resume(); }
   syncButtons();
 });
-btnShake.addEventListener('click', () => { opts.shake = !opts.shake; if(!opts.shake) state.shake = 0; syncButtons(); });
-btnFlash.addEventListener('click', () => { opts.flash = !opts.flash; if(!opts.flash) state.flash = 0; syncButtons(); });
+btnShake.addEventListener('click', () => {
+  opts.shake = !opts.shake;
+  if (!opts.shake) state.shake = 0;
+  syncButtons();
+});
+btnFlash.addEventListener('click', () => {
+  opts.flash = !opts.flash;
+  if (!opts.flash) state.flash = 0;
+  syncButtons();
+});
+btnBloom.addEventListener('click', () => {
+  opts.bloom = !opts.bloom;
+  syncButtons();
+});
 
 /* ---------------- arranque ---------------- */
 resize();
 syncButtons();
+showMenu();
 requestAnimationFrame(frame);
 
-})();
 </script>
 </body>
 </html>
