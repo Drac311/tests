@@ -77,7 +77,6 @@
   .dot{width:6px;height:6px;background:var(--lime);display:inline-block;animation:pulse 2s ease-in-out infinite;}
   @keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.35;transform:scale(.85);}}
 
-  /* --- HUD actions (CTA fijo) --- */
   .hud-actions{display:flex;align-items:center;gap:16px;pointer-events:auto;}
   .hud-cta{
     font-family:"JetBrains Mono",monospace;font-size:.65rem;
@@ -248,6 +247,54 @@
   .project-empty{border-style:dashed;background:transparent;}
   .project-empty:hover{border-color:var(--indigo);background:rgba(110,123,255,.04);}
   .project-empty p{color:var(--muted);font-size:.9rem;margin:0;line-height:1.6;}
+
+  /* --- Reviews --- */
+  .reviews-grid{display:grid;grid-template-columns:1fr;gap:16px;margin-bottom:56px;}
+  @media(min-width:720px){.reviews-grid{grid-template-columns:repeat(2,1fr);}}
+  @media(min-width:1024px){.reviews-grid{grid-template-columns:repeat(3,1fr);}}
+  .review{
+    background:var(--panel);border:1px solid var(--line);
+    padding:24px;display:flex;flex-direction:column;gap:14px;
+    transition:border-color .3s ease,background .3s ease;
+  }
+  .review:hover{border-color:var(--lime);background:var(--panel-2);}
+  .review-head{display:flex;align-items:center;gap:12px;}
+  .review-avatar{
+    width:38px;height:38px;display:flex;align-items:center;justify-content:center;
+    background:var(--roblox);color:#fff;font-family:"JetBrains Mono",monospace;
+    font-weight:600;font-size:.95rem;flex-shrink:0;
+  }
+  .review-name{font-weight:600;font-size:.95rem;color:var(--text);}
+  .review-meta{
+    font-family:"JetBrains Mono",monospace;font-size:.65rem;
+    letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:2px;
+  }
+  .review-text{color:var(--muted);font-size:.92rem;line-height:1.6;margin:0;flex:1;}
+  .review-rating{color:var(--lime);font-family:"JetBrains Mono",monospace;font-size:.85rem;letter-spacing:.15em;}
+
+  .review-form-wrapper{
+    background:var(--panel);border:1px solid var(--line);padding:32px 28px;
+  }
+  .review-form-head{
+    display:flex;justify-content:space-between;align-items:center;
+    margin-bottom:24px;flex-wrap:wrap;gap:8px;
+  }
+  .review-form-head .mono{color:var(--lime);}
+  .review-form-head .mono:last-child{color:var(--muted);}
+  .review-form{display:flex;flex-direction:column;gap:20px;}
+  .review-form label{display:flex;flex-direction:column;gap:8px;}
+  .review-form label .mono{color:var(--muted);font-size:.7rem;}
+  .review-form input,.review-form textarea{
+    background:var(--panel-2);border:1px solid var(--line);
+    padding:12px 14px;color:var(--text);font-family:"JetBrains Mono",monospace;
+    font-size:.85rem;transition:border-color .2s ease;width:100%;
+  }
+  .review-form input::placeholder,.review-form textarea::placeholder{color:var(--muted-2);}
+  .review-form input:focus,.review-form textarea:focus{outline:none;border-color:var(--lime);}
+  .review-form textarea{resize:vertical;min-height:110px;font-family:"Space Grotesk",sans-serif;font-size:.9rem;}
+  .form-row{display:grid;grid-template-columns:1fr;gap:20px;}
+  @media(min-width:720px){.form-row{grid-template-columns:1fr 1fr;}}
+  .review-form-foot{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;}
 
   .about-grid{display:grid;grid-template-columns:1fr;gap:24px;}
   @media(min-width:900px){.about-grid{grid-template-columns:320px 1fr;}}
@@ -432,7 +479,7 @@
     html{scroll-behavior:auto;}
     .dot,.hero-badge .badge-dot,.console-head .live .dot{animation:none;}
     .reveal{opacity:1;transform:none;transition:none;}
-    .service,.btn,.tag,.step,.copy-btn,.back-top,.project,.hud-cta{transition:none;}
+    .service,.btn,.tag,.step,.copy-btn,.back-top,.project,.review,.hud-cta{transition:none;}
     .ticker-track{animation:none;}
     body{transition:none;}
   }
@@ -454,6 +501,8 @@
     .pricing-note{padding:16px;}
     .console-log li{grid-template-columns:1fr;}
     .properties li{grid-template-columns:100px 1fr;font-size:.75rem;}
+    .review-form-wrapper{padding:24px 20px;}
+    .review-form-foot .btn{width:100%;justify-content:center;}
   }
 
   @media (max-height: 600px) and (orientation: landscape) {
@@ -495,7 +544,7 @@
         Abierto a colaboraciones.
       </p>
       <div class="hero-actions">
-        <a class="btn primary" href="#projects">Ver proyectos</a>
+        <a class="btn primary" href="#player">Sobre mí</a>
         <a class="btn ghost" href="#connect">Contacto</a>
         <span class="hero-badge" aria-label="Más de 700 followers en Roblox">
           <span class="badge-dot" aria-hidden="true"></span>
@@ -890,11 +939,86 @@
     </div>
   </section>
 
-  <!-- 07 / Output -->
+  <!-- 07 / Reviews -->
+  <section class="section" id="reviews">
+    <div class="section-inner">
+      <header class="section-head reveal">
+        <span class="mono">07 / Reviews</span>
+        <h2>Lo que dicen quienes han trabajado conmigo</h2>
+      </header>
+
+      <div class="reviews-grid">
+        <article class="review reveal" style="--d:.05s">
+          <div class="review-head">
+            <span class="review-avatar" aria-hidden="true">A</span>
+            <div>
+              <div class="review-name">Alex</div>
+              <div class="review-meta">Game Lead · Project placeholder</div>
+            </div>
+          </div>
+          <p class="review-text">"Necesitábamos un sistema de inventario sólido y Drac lo entregó con tiempo y documentado. Cero pérdidas de datos en producción."</p>
+          <div class="review-rating" aria-label="5 de 5 estrellas">★★★★★</div>
+        </article>
+
+        <article class="review reveal" style="--d:.1s">
+          <div class="review-head">
+            <span class="review-avatar" aria-hidden="true">M</span>
+            <div>
+              <div class="review-name">Mira</div>
+              <div class="review-meta">Producer · Project placeholder</div>
+            </div>
+          </div>
+          <p class="review-text">"Comunicación clara desde el primer brief. Nos dio presupuesto cerrado en 48h y lo cumplió. Repetiremos en el siguiente proyecto."</p>
+          <div class="review-rating" aria-label="5 de 5 estrellas">★★★★★</div>
+        </article>
+
+        <article class="review reveal" style="--d:.15s">
+          <div class="review-head">
+            <span class="review-avatar" aria-hidden="true">K</span>
+            <div>
+              <div class="review-name">Kai</div>
+              <div class="review-meta">Solo dev · Project placeholder</div>
+            </div>
+          </div>
+          <p class="review-text">"Honesto con lo que sabe y con lo que no. Prefiero eso a alguien que promete todo. El sistema de DataStore que montó no ha fallado ni una vez."</p>
+          <div class="review-rating" aria-label="5 de 5 estrellas">★★★★★</div>
+        </article>
+      </div>
+
+      <div class="review-form-wrapper reveal" style="--d:.2s">
+        <div class="review-form-head">
+          <span class="mono">// Add your review</span>
+          <span class="mono">Demo only — no data sent</span>
+        </div>
+        <form class="review-form" id="review-form" novalidate>
+          <div class="form-row">
+            <label>
+              <span class="mono">Nombre / Rol</span>
+              <input type="text" name="name" placeholder="Tu nombre o rol" />
+            </label>
+            <label>
+              <span class="mono">Proyecto</span>
+              <input type="text" name="project" placeholder="En qué trabajamos juntos" />
+            </label>
+          </div>
+          <label>
+            <span class="mono">Reseña</span>
+            <textarea name="review" rows="4" placeholder="Cuenta tu experiencia trabajando conmigo..."></textarea>
+          </label>
+          <div class="review-form-foot">
+            <span class="mono" style="color:var(--muted);">// Formulario decorativo — no se envía nada</span>
+            <button type="submit" class="btn primary">Enviar reseña</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- 08 / Output -->
   <section class="section" id="output">
     <div class="section-inner">
       <header class="section-head reveal">
-        <span class="mono">07 / Output</span>
+        <span class="mono">08 / Output</span>
         <h2>Estado actual, sin adornos</h2>
       </header>
 
@@ -917,10 +1041,10 @@
     </div>
   </section>
 
-  <!-- 08 / Connect -->
+  <!-- 09 / Connect -->
   <section class="section" id="connect">
     <div class="section-inner connect reveal">
-      <span class="mono">08 / Connect</span>
+      <span class="mono">09 / Connect</span>
       <h2>¿Hablamos?</h2>
       <div class="connect-alt">
         <button class="copy-btn" data-copy="eldraxi" aria-label="Copiar Discord: eldraxi">
@@ -1034,7 +1158,7 @@ window.addEventListener('scroll', () => {
 }, { passive: true });
 backTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
 
-/* ---------- Copy to clipboard ---------- */
+/* ---------- Copy to clipboard + toast ---------- */
 const toast = document.getElementById('toast');
 let toastTimer = null;
 function showToast(msg) {
@@ -1054,6 +1178,16 @@ document.querySelectorAll('[data-copy]').forEach(btn => {
     }
   });
 });
+
+/* ---------- Review form (decorative) ---------- */
+const reviewForm = document.getElementById('review-form');
+if (reviewForm) {
+  reviewForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    showToast('Demo only — no se envió nada ✓');
+    reviewForm.reset();
+  });
+}
 
 /* ---------- 3D Scene: Logo Roblox ---------- */
 import * as THREE from 'three';
