@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Resumen Áreas y Volúmenes 4º ESO</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&family=Open+Sans:wght@400;600&display=swap');
+
+        :root {
+            --naranja: #ff8c42;
+            --gris-area: #e0e0e0;
+            --rojo: #d9381e;
+            --azul: #1e3a8a;
+            --fondo: #f9f9f9;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Open Sans', sans-serif;
+            background-color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* Configuración de la página A4 */
+        .page {
+            width: 210mm;
+            height: 297mm;
+            background: white;
+            padding: 10mm;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-rows: auto auto auto auto auto;
+            gap: 8px;
+            font-size: 9px;
+            color: #333;
+        }
+
+        @media print {
+            body { background: none; }
+            .page { box-shadow: none; margin: 0; }
+            @page { size: A4; margin: 0; }
+        }
+
+        /* Encabezados y Estructura */
+        .header {
+            grid-column: 1 / -1;
+            text-align: center;
+            border-bottom: 2px solid var(--rojo);
+            padding-bottom: 5px;
+            margin-bottom: 5px;
+        }
+        .header h1 {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 16px;
+            color: var(--rojo);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .section-title {
+            background: var(--rojo);
+            color: white;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 800;
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            display: inline-block;
+            margin-bottom: 4px;
+            grid-column: 1 / -1;
+        }
+
+        .card {
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            padding: 6px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            background: white;
+        }
+
+        .card-title {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--rojo);
+            margin-bottom: 2px;
+        }
+
+        .formula {
+            font-family: monospace;
+            font-size: 9px;
+            margin-top: 2px;
+            line-height: 1.3;
+        }
+
+        .area-badge { background: var(--gris-area); padding: 2px 4px; border-radius: 3px; display: inline-block; margin: 1px 0; }
+        .vol-badge { background: #ffe5d9; color: var(--naranja); border: 1px solid var(--naranja); padding: 2px 4px; border-radius: 3px; display: inline-block; font-weight: bold; margin: 1px 0; }
+
+        /* Figuras planas Grid */
+        .grid-planas {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 5px;
+        }
+        
+        .plana-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            border: 1px solid #eee;
+            padding: 3px;
+            border-radius: 4px;
+        }
+
+        /* Contenedores de SVG */
+        .svg-container {
+            width: 35px;
+            height: 35px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .svg-container svg {
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        /* Secciones específicas */
+        .full-width { grid-column: 1 / -1; }
+        .col-span-2 { grid-column: span 2; }
+        .col-span-3 { grid-column: span 3; }
+        
+        .pitagoras-box {
+            background: #fff3e0;
+            border-left: 3px solid var(--naranja);
+            padding: 5px;
+            font-size: 8px;
+            border-radius: 0 4px 4px 0;
+            margin-top: auto;
+        }
+
+        .units-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 8px;
+            margin-top: 4px;
+        }
+        .units-table td { padding: 2px; border: 1px solid #ddd; text-align: center;}
+
+    </style>
+</head>
+<body>
+
+<div class="page">
+    <div class="header">
+        <h1>📐 Resumen Visual: Áreas y Volúmenes (4º ESO)</h1>
+        <p style="font-size: 8px; color: #666; margin-top:2px;">Fórmulas en <b>Naranja = Volumen</b> | <b>Gris = Área</b> | * = Básica obligatoria</p>
+    </div>
+
+    <!-- 3D BASICO -->
+    <div class="section-title">CUERPOS 3D BÁSICOS (Prismas y Cilindros)</div>
+    
+    <!-- Prisma -->
+    <div class="card">
+        <div class="card-title">PRISMA *</div>
+        <div class="svg-container" style="width:100%; height:60px;">
+            <!-- SVG Prisma 3D -->
+            <svg viewBox="0 0 100 100">
+                <polygon points="20,30 50,15 80,30 50,45" fill="#ffd6ba" stroke="#d9381e" stroke-width="1.5"/>
+                <polygon points="20,30 20,80 50,95 50,45" fill="#ffe5d9" stroke="#d9381e" stroke-width="1.5"/>
+                <polygon points="80,30 80,80 50,95 50,45" fill="#ffcba4" stroke="#d9381e" stroke-width="1.5"/>
+                <line x1="35" y1="22" x2="35" y2="72" stroke="#d9381e" stroke-dasharray="3,3"/>
+            </svg>
+        </div>
+        <div class="formula">
+            <span class="area-badge">A<sub>L</sub> = P<sub>b</sub> · h</span><br>
+            <span class="area-badge">A<sub>T</sub> = A<sub>L</sub> + 2·A<sub>b</sub></span><br>
+            <span class="vol-badge">V = A<sub>b</sub> · h</span>
+        </div>
+    </div>
+
+    <!-- Cilindro -->
+    <div class="card">
+        <div class="card-title">CILINDRO *</div>
+        <div class="svg-container" style="width:100%; height:60px;">
+            <!-- SVG Cilindro 3D -->
+            <svg viewBox="0 0 100 100">
+                <rect x="25" y="20" width="50" height="60" fill="#ffe5d9" stroke="#d9381e" stroke-width="1.5"/>
+                <ellipse cx="50" cy="20" rx="25" ry="10" fill="#ffd6ba" stroke="#d9381e" stroke-width="1.5"/>
+                <path d="M25,80 A25,10 0 0,0 75,80" fill="none" stroke="#d9381e" stroke-width="1.5"/>
+                <line x1="50" y1="20" x2="50" y2="80" stroke="#d9381e" stroke-dasharray="3,3"/>
+            </svg>
+        </div>
+        <div class="formula">
+            <span class="area-badge">A<sub>L</sub> = 2πr · h</span><br>
+            <span class="area-badge">A<sub>T</sub> = 2πrh + 2πr²</span><br>
+            <span class="vol-badge">V = πr² · h</span>
+        </div>
+    </div>
+
+    <!-- Cuerpos en Punta -->
+    <div class="card">
+        <div class="card-title">PIRÁMIDE / CONO *</div>
+        <div class="svg-container" style="width:100%; height:60px; justify-content: space-around;">
+            <!-- SVG Pirámide -->
+            <svg viewBox="0 0 100 100" style="width:45%;">
+                <polygon points="50,10 20,80 80,80" fill="#ffd6ba" stroke="#d9381e" stroke-width="1.5"/>
+                <line x1="50" y1="10" x2="50" y2="80" stroke="#d9381e" stroke-dasharray="3,3"/>
+                <line x1="20" y1="80" x2="80" y2="80" stroke="#d9381e" stroke-width="1.5"/>
+            </svg>
+            <!-- SVG Cono -->
+            <svg viewBox="0 0 100 100" style="width:45%;">
+                <path d="M50,10 L20,80 A30,10 0 0,0 80,80 Z" fill="#ffe5d9" stroke="#d9381e" stroke-width="1.5"/>
+                <ellipse cx="50" cy="80" rx="30" ry="10" fill="none" stroke="#d9381e" stroke-width="1.5"/>
+                <line x1="50" y1="10" x2="50" y2="80" stroke="#d9381e" stroke-dasharray="3,3"/>
+            </svg>
+        </div>
+        <div class="formula">
+            <span class="area-badge">A<sub>T</sub> = A<sub>L</sub> + A<sub>b</sub></span> (1 base)<br>
+            <span class="vol-badge">V = (A<sub>b</sub> · h) / 3</span><br>
+            <span style="font-size:7px; color:#666;">Pirámide: A<sub>L</sub> = (P<sub>b</sub>·ap)/2 | Cono: A<sub>L</sub> = πrg</span>
+        </div>
+    </div>
+
+    <!-- Esfera y Cubo -->
+    <div class="section-title">ESFERA Y CUBO</div>
+    
+    <div class="card">
+        <div class="card-title">ESFERA *</div>
+        <div class="svg-container" style="width:100%; height:60px;">
+            <!-- SVG Esfera 3D -->
+            <svg viewBox="0 0 100 100">
+                <defs>
+                    <radialGradient id="esferaGrad" cx="30%" cy="30%" r="70%">
+                        <stop offset="0%" stop-color="#ffe5d9"/>
+                        <stop offset="100%" stop-color="#ffb380"/>
+                    </radialGradient>
+                </defs>
+                <circle cx="50" cy="50" r="35" fill="url(#esferaGrad)" stroke="#d9381e" stroke-width="1.5"/>
+                <ellipse cx="50" cy="50" rx="35" ry="10" fill="none" stroke="#d9381e" stroke-width="1" stroke-dasharray="4,4"/>
+                <line x1="50" y1="50" x2="85" y2="50" stroke="#d9381e" stroke-width="1.5"/>
+                <text x="65" y="45" font-size="10" fill="#d9381e">r</text>
+            </svg>
+        </div>
+        <div class="formula">
+            <span class="area-badge">A = 4πr²</span><br>
+            <span class="vol-badge">V = (4/3)πr³</span><br>
+            <span style="font-size:7px;">Si dan diámetro: r = d/2</span>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">CUBO Y ORTODEDRO</div>
+        <div class="svg-container" style="width:100%; height:60px;">
+            <!-- SVG Cubo 3D -->
+            <svg viewBox="0 0 100 100">
+                <polygon points="30,40 60,25 90,40 60,55" fill="#ffd6ba" stroke="#d9381e" stroke-width="1.5"/>
+                <polygon points="30,40 30,80 60,95 60,55" fill="#ffe5d9" stroke="#d9381e" stroke-width="1.5"/>
+                <polygon points="90,40 90,80 60,95 60,55" fill="#ffcba4" stroke="#d9381e" stroke-width="1.5"/>
+            </svg>
+        </div>
+        <div class="formula">
+            <span style="font-weight:bold; font-size:8px;">Cubo:</span> <span class="area-badge">A = 6a²</span> <span class="vol-badge">V = a³</span><br>
+            <span style="font-weight:bold; font-size:8px;">Ortodedro:</span> <span class="area-badge">A = 2(ab+ac+bc)</span> <span class="vol-badge">V = a·b·c</span>
+        </div>
+    </div>
+
+    <!-- Pitágoras y Ampliación -->
+    <div class="card full-width" style="background: #fffaf5;">
+        <div class="card-title" style="color:var(--rojo);">📐 PITÁGORAS: CÓMO SACAR LO QUE FALTA (para hallar h, ap, g o a)</div>
+        <div style="display:flex; justify-content:space-between; font-size:8px; gap: 10px;">
+            <div>
+                <b>Hipotenusa² = Cateto² + Cateto²</b><br>
+                <b>Pirámide:</b> ap² = h² + a<sub>b</sub>²<br>
+                <b>Cono:</b> g² = h² + r²
+            </div>
+            <div>
+                <b>Hexágono:</b> l² = a² + (l/2)²<br>
+                <i style="color:#666;">Para calcular un cateto, resta: cateto = √(hip² - otro²)</i>
+            </div>
+        </div>
+    </div>
+
+    <!-- AMPLIACION Y FIGURAS PLANAS -->
+    <div class="section-title">FIGURAS PLANAS (Para calcular el Área de la base)</div>
+    
+    <div class="grid-planas">
+        <!-- Cuadrado -->
+        <div class="plana-item">
+            <svg viewBox="0 0 100 100" width="30" height="30"><rect x="20" y="20" width="60" height="60" fill="#eee" stroke="#d9381e" stroke-width="2"/></svg>
+            <div><b>Cuadrado</b><br>A = l²</div>
+        </div>
+        <!-- Rectángulo -->
+        <div class="plana-item">
+            <svg viewBox="0 0 100 100" width="30" height="30"><rect x="10" y="30" width="80" height="40" fill="#eee" stroke="#d9381e" stroke-width="2"/></svg>
+            <div><b>Rectángulo</b><br>A = b · h</div>
+        </div>
+        <!-- Triángulo -->
+        <div class="plana-item">
+            <svg viewBox="0 0 100 100" width="30" height="30"><polygon points="50,20 90,80 10,80" fill="#eee" stroke="#d9381e" stroke-width="2"/></svg>
+            <div><b>Triángulo</b><br>A = (b · h)/2</div>
+        </div>
+        <!-- Rombo -->
+        <div class="plana-item">
+            <svg viewBox="0 0 100 100" width="30" height="30"><polygon points="50,10 90,50 50,90 10,50" fill="#eee" stroke="#d9381e" stroke-width="2"/></svg>
+            <div><b>Rombo</b><br>A = (D · d)/2</div>
+        </div>
+        <!-- Romboide -->
+        <div class="plana-item">
+            <svg viewBox="0 0 100 100" width="30" height="30"><polygon points="30,20 90,20 70,80 10,80" fill="#eee" stroke="#d9381e" stroke-width="2"/></svg>
+            <div><b>Romboide</b><br>A = b · h</div>
+        </div>
+        <!-- Trapecio -->
+        <div class="plana-item">
+            <svg viewBox="0 0 100 100" width="30" height="30"><polygon points="30,20 70,20 90,80 10,80" fill="#eee" stroke="#d9381e" stroke-width="2"/></svg>
+            <div><b>Trapecio</b><br>A = ((B+b)·h)/2</div>
+        </div>
+        <!-- Polígono Regular -->
+        <div class="plana-item">
+            <svg viewBox="0 0 100 100" width="30" height="30"><polygon points="50,10 90,30 90,70 50,90 10,70 10,30" fill="#eee" stroke="#d9381e" stroke-width="2"/></svg>
+            <div><b>Pol. Regular</b><br>A = (P · a)/2</div>
+        </div>
+        <!-- Círculo -->
+        <div class="plana-item">
+            <svg viewBox="0 0 100 100" width="30" height="30"><circle cx="50" cy="50" r="40" fill="#eee" stroke="#d9381e" stroke-width="2"/></svg>
+            <div><b>Círculo</b><br>A = πr²</div>
+        </div>
+    </div>
+
+    <!-- AMPLIACIÓN TRONCOS Y ESFERAS -->
+    <div class="section-title">AMPLIACIÓN: Troncos, partes de la esfera y compuestos</div>
+    
+    <div class="card col-span-2">
+        <div style="display:flex; gap:10px; align-items:center;">
+            <svg viewBox="0 0 100 100" width="60" height="60">
+                <!-- Tronco de cono -->
+                <path d="M30,20 L10,80 A40,10 0 0,0 90,80 L70,20 A20,10 0 0,1 30,20 Z" fill="#ffe5d9" stroke="#d9381e" stroke-width="1.5"/>
+                <ellipse cx="50" cy="20" rx="20" ry="10" fill="none" stroke="#d9381e" stroke-width="1.5"/>
+            </svg>
+            <div class="formula">
+                <b>Tronco de Cono / Pirámide</b><br>
+                <span class="area-badge">A<sub>L</sub> = π(R+r)g</span> (Cono)<br>
+                <span class="vol-badge">V = π·h·(R²+r²+R·r) / 3</span> (Cono)<br>
+                <span style="font-size:7px;">Pitágoras Tronco Cono: g² = h² + (R-r)²</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">PARTES DE LA ESFERA</div>
+        <div class="formula">
+            <b>Semiesfera:</b> <span class="area-badge">A<sub>T</sub> = 3πr²</span> <span class="vol-badge">V = (2/3)πr³</span><br>
+            <b>Casquete/Zona:</b> <span class="area-badge">A = 2πRh</span><br>
+            <b>Huso/Cuña (gajo naranja):</b><br>
+            <span class="area-badge">A = (4πr² · n)/360</span><br>
+            <span class="vol-badge">V = (4/3 · πr³ · n)/360</span>
+        </div>
+    </div>
+
+    <!-- PASOS Y UNIDADES -->
+    <div class="card col-span-2" style="background: #eef2ff; border-color: var(--azul);">
+        <div class="card-title" style="color:var(--azul);">📏 UNIDADES Y CÓMO RESOLVER UN EJERCICIO</div>
+        <div style="display:flex; gap:15px; font-size:8px;">
+            <div>
+                <b>Unidades:</b><br>
+                Longitud: ×10 | Área: ×100 | Volumen: ×1000<br>
+                1 dm³ = 1 Litro | 1 cm³ = 1 mL | 1 m³ = 1000 L
+            </div>
+            <div>
+                <b>Pasos:</b><br>
+                1. Dibujar y nombrar el cuerpo.<br>
+                2. Calcular A<sub>b</sub> (usa Pitágoras si falta altura).<br>
+                3. Calcular A<sub>L</sub>, A<sub>T</sub> y V.<br>
+                4. Unidades: Área en ², Volumen en ³.
+            </div>
+        </div>
+    </div>
+
+    <div class="card" style="background: #fff0f0; border-color: var(--rojo); font-size:7.5px; display:flex; flex-direction:column; justify-content:center;">
+        <b style="color:var(--rojo);">Cuerpos Compuestos</b><br>
+        - Suma los volúmenes de las partes.<br>
+        - En el área, <b>NO</b> sumes las caras que quedan pegadas (solo cuenta lo que se ve por fuera).<br>
+        - Si hay un hueco, <b>resta</b> su volumen.
+    </div>
+
+</div>
+
+</body>
+</html>
