@@ -1,0 +1,1386 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Drac311 — Roblox Developer</title>
+<meta name="description" content="Portfolio de Drac311, Roblox developer. Scripting y DataStorage. Aprendiendo GUI. 700+ followers. Per job pricing." />
+<meta name="theme-color" content="#0A0B0F" />
+<meta property="og:title" content="Drac311 — Roblox Developer" />
+<meta property="og:description" content="Scripting y DataStorage. Aprendiendo GUI. Per job pricing, no revenue share." />
+<meta property="og:type" content="website" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%232345FF'/%3E%3Cg transform='rotate(45 50 50)'%3E%3Crect x='18' y='18' width='64' height='64' fill='%23FFFFFF'/%3E%3Crect x='38' y='38' width='24' height='24' fill='%232345FF'/%3E%3C/g%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0A0B0F;
+    --panel:#12141A;
+    --panel-2:#191C24;
+    --line:#23262F;
+    --line-2:#2e323d;
+    --text:#ECEEF2;
+    --muted:#A5ADBB;
+    --muted-2:#7a8290;
+    --lime:#B6FF2E;
+    --indigo:#6E7BFF;
+    --roblox:#2345FF;
+    --max:1240px;
+    --statusbar-h:44px;
+  }
+  *,*::before,*::after{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:"Space Grotesk",system-ui,sans-serif;
+    font-size:16px;line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+    padding-bottom:calc(var(--statusbar-h) + env(safe-area-inset-bottom));
+    opacity:0;transition:opacity .4s ease;
+  }
+  body.loaded{opacity:1;}
+  body::after{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:9998;opacity:.05;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    mix-blend-mode:overlay;
+  }
+  a{color:inherit;text-decoration:none;}
+  ::selection{background:var(--lime);color:#0A0B0F;}
+  :focus-visible{outline:2px solid var(--lime);outline-offset:3px;}
+
+  .mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);}
+  .accent{color:var(--lime);}
+
+  .progress{
+    position:fixed;top:0;left:0;right:0;height:2px;z-index:60;
+    background:transparent;pointer-events:none;
+  }
+  .progress-bar{
+    height:100%;width:0;
+    background:linear-gradient(90deg, var(--lime), var(--roblox));
+  }
+
+  .hud-top{
+    position:fixed;top:0;left:0;right:0;z-index:50;
+    display:flex;justify-content:space-between;align-items:center;
+    padding:18px 28px;
+    padding-top:max(18px, env(safe-area-inset-top));
+    pointer-events:none;
+    background:linear-gradient(to bottom, rgba(10,11,15,.92), rgba(10,11,15,0));
+  }
+  .hud-top .mono{color:var(--text);}
+  .hud-status{display:inline-flex;align-items:center;gap:8px;color:var(--lime)!important;}
+  .dot{width:6px;height:6px;background:var(--lime);display:inline-block;animation:pulse 2s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.35;transform:scale(.85);}}
+
+  .hud-actions{display:flex;align-items:center;gap:16px;pointer-events:auto;}
+  .hud-cta{
+    font-family:"JetBrains Mono",monospace;font-size:.65rem;
+    letter-spacing:.1em;text-transform:uppercase;
+    color:var(--lime);border:1px solid var(--lime);
+    padding:7px 12px;background:rgba(182,255,46,.06);
+    transition:background .2s ease,color .2s ease;
+  }
+  .hud-cta:hover{background:var(--lime);color:#0A0B0F;}
+  @media(max-width:560px){.hud-cta{display:none;}}
+
+  .statusbar{
+    position:fixed;bottom:0;left:0;right:0;z-index:50;
+    height:calc(var(--statusbar-h) + env(safe-area-inset-bottom));
+    display:flex;align-items:center;
+    background:var(--panel);border-top:1px solid var(--line);
+    font-family:"JetBrains Mono",monospace;
+    font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);
+    padding:0 16px;
+    padding-bottom:env(safe-area-inset-bottom);
+    overflow-x:auto;
+    overflow-y:hidden;
+    white-space:nowrap;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+  }
+  .statusbar::-webkit-scrollbar{display:none;}
+  .statusbar > *{display:inline-flex;align-items:center;gap:6px;padding:0 12px;height:100%;border-right:1px solid var(--line);flex-shrink:0;}
+  .statusbar > *:last-child{border-right:0;}
+  .statusbar .sb-accent{color:var(--lime);}
+  .statusbar .sb-current{color:var(--text);}
+  .statusbar .sb-current strong{color:var(--lime);font-weight:600;}
+  .statusbar .sb-hide-sm{display:none;}
+  @media(min-width:720px){ .statusbar .sb-hide-sm{display:inline-flex;} }
+  @media(min-width:960px){ .statusbar .sb-hide-md{display:inline-flex;} }
+  .statusbar .sb-hide-md{display:none;}
+
+  .hero{
+    position:relative;min-height:100svh;
+    display:flex;align-items:flex-end;
+    padding:0 28px 96px;
+    padding-bottom:max(96px, calc(env(safe-area-inset-bottom) + 60px));
+    overflow:hidden;
+  }
+  .hero::before{
+    content:"";position:absolute;inset:0;
+    background-image:
+      linear-gradient(rgba(182,255,46,.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(182,255,46,.05) 1px, transparent 1px);
+    background-size:48px 48px;
+    pointer-events:none;z-index:0;
+    mask-image:linear-gradient(to bottom, transparent 0%, black 30%, black 70%, transparent 100%);
+    -webkit-mask-image:linear-gradient(to bottom, transparent 0%, black 30%, black 70%, transparent 100%);
+  }
+  #scene{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:1;pointer-events:none;}
+  .hero-copy{position:relative;z-index:4;max-width:var(--max);margin:0 auto;width:100%;}
+  .viewport-tag{
+    display:inline-flex;align-items:center;gap:8px;
+    padding:6px 10px;margin-bottom:24px;
+    background:rgba(18,20,26,.7);
+    border:1px solid var(--line);
+    font-family:"JetBrains Mono",monospace;font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+    backdrop-filter:blur(6px);
+  }
+  .viewport-tag .camera-dot{width:6px;height:6px;background:var(--roblox);display:inline-block;}
+  .kicker{margin:0 0 20px;}
+  .hero h1{font-size:clamp(3rem,10vw,9rem);font-weight:700;letter-spacing:-.04em;line-height:.9;margin:0 0 24px;word-break:break-word;}
+  .lede{max-width:54ch;font-size:clamp(.95rem,1.4vw,1.15rem);color:var(--muted);margin:0 0 32px;line-height:1.6;}
+  .hero-actions{display:flex;gap:12px;flex-wrap:wrap;align-items:center;}
+
+  .btn{
+    display:inline-flex;align-items:center;gap:10px;
+    padding:14px 22px;
+    font-family:"JetBrains Mono",monospace;font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;
+    border:1px solid var(--line);background:transparent;color:var(--text);cursor:pointer;
+    transition:border-color .25s ease,background .25s ease,transform .25s ease,color .25s ease;
+  }
+  .btn.primary{background:var(--lime);color:#0A0B0F;border-color:var(--lime);font-weight:600;}
+  .btn.primary:hover{transform:translateY(-2px);background:#c8ff5c;border-color:#c8ff5c;}
+  .btn.ghost:hover{border-color:var(--lime);color:var(--lime);}
+
+  .hero-badge{
+    display:inline-flex;align-items:center;gap:8px;
+    padding:14px 18px;
+    font-family:"JetBrains Mono",monospace;
+    font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--lime);
+    border:1px dashed rgba(182,255,46,.45);
+    background:rgba(182,255,46,.04);
+    white-space:nowrap;
+  }
+  .hero-badge .badge-dot{width:6px;height:6px;background:var(--lime);display:inline-block;animation:pulse 2s ease-in-out infinite;}
+
+  .ticker{
+    overflow:hidden;
+    border-top:1px solid var(--line);
+    border-bottom:1px solid var(--line);
+    background:var(--panel);
+    padding:14px 0;
+    position:relative;
+  }
+  .ticker::before,.ticker::after{
+    content:"";position:absolute;top:0;bottom:0;width:80px;z-index:2;pointer-events:none;
+  }
+  .ticker::before{left:0;background:linear-gradient(90deg, var(--panel), transparent);}
+  .ticker::after{right:0;background:linear-gradient(-90deg, var(--panel), transparent);}
+  .ticker-track{
+    display:flex;width:max-content;
+    animation:ticker 40s linear infinite;
+    will-change:transform;
+  }
+  .ticker-content{
+    display:inline-flex;align-items:center;gap:32px;
+    padding-right:32px;
+    font-family:"JetBrains Mono",monospace;
+    font-size:.75rem;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--muted);white-space:nowrap;
+  }
+  .ticker-content span.dot-sep{color:var(--line-2);}
+  .ticker-content span.hl{color:var(--lime);}
+  .ticker-content span.hl-roblox{color:var(--roblox);}
+  .ticker-content span.warn{color:#ffd166;}
+  @keyframes ticker{from{transform:translateX(0);}to{transform:translateX(-50%);}}
+
+  .section{
+    padding:120px 28px;border-top:1px solid var(--line);
+    position:relative;
+    scroll-margin-top:100px;
+    content-visibility:auto;
+    contain-intrinsic-size:0 900px;
+  }
+  .section-inner{max-width:var(--max);margin:0 auto;}
+  .section-head{margin-bottom:64px;}
+  .section-head h2{font-size:clamp(2rem,4.2vw,3.25rem);font-weight:700;letter-spacing:-.03em;line-height:1.05;margin:14px 0 0;max-width:22ch;}
+
+  /* --- Projects --- */
+  .projects-grid{display:grid;grid-template-columns:1fr;gap:16px;}
+  @media(min-width:720px){.projects-grid{grid-template-columns:repeat(2,1fr);}}
+  .project{
+    background:var(--panel);border:1px solid var(--line);
+    padding:28px 24px;display:flex;flex-direction:column;gap:16px;
+    transition:border-color .3s ease,transform .3s ease,background .3s ease;
+  }
+  .project:hover{border-color:var(--lime);transform:translateY(-3px);background:var(--panel-2);}
+  .project-head{display:flex;justify-content:space-between;align-items:center;}
+  .project-head .mono{color:var(--lime);}
+  .project-type{color:var(--muted)!important;}
+  .project h3{font-size:1.4rem;font-weight:700;letter-spacing:-.02em;margin:0;}
+  .project-body{margin:0;display:grid;grid-template-columns:1fr;gap:0;}
+  .project-body dt{
+    font-family:"JetBrains Mono",monospace;font-size:.65rem;
+    letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+    margin-top:12px;
+  }
+  .project-body dt:first-child{margin-top:0;}
+  .project-body dd{margin:4px 0 0;color:var(--text);font-size:.9rem;line-height:1.55;}
+  .project-foot{
+    display:flex;justify-content:space-between;align-items:center;
+    gap:12px;flex-wrap:wrap;margin-top:auto;padding-top:16px;
+    border-top:1px solid var(--line);
+  }
+  .project-link{
+    font-family:"JetBrains Mono",monospace;font-size:.72rem;
+    letter-spacing:.08em;text-transform:uppercase;color:var(--lime);
+    transition:opacity .2s ease;
+  }
+  .project-link:hover{opacity:.7;}
+  .project-empty{border-style:dashed;background:transparent;}
+  .project-empty:hover{border-color:var(--indigo);background:rgba(110,123,255,.04);}
+  .project-empty p{color:var(--muted);font-size:.9rem;margin:0;line-height:1.6;}
+
+  /* --- Reviews --- */
+  .reviews-grid{display:grid;grid-template-columns:1fr;gap:16px;margin-bottom:56px;}
+  @media(min-width:720px){.reviews-grid{grid-template-columns:repeat(2,1fr);}}
+  @media(min-width:1024px){.reviews-grid{grid-template-columns:repeat(3,1fr);}}
+  .review{
+    background:var(--panel);border:1px solid var(--line);
+    padding:24px;display:flex;flex-direction:column;gap:14px;
+    transition:border-color .3s ease,background .3s ease;
+  }
+  .review:hover{border-color:var(--lime);background:var(--panel-2);}
+  .review-head{display:flex;align-items:center;gap:12px;}
+  .review-avatar{
+    width:38px;height:38px;display:flex;align-items:center;justify-content:center;
+    background:var(--roblox);color:#fff;font-family:"JetBrains Mono",monospace;
+    font-weight:600;font-size:.95rem;flex-shrink:0;
+  }
+  .review-name{font-weight:600;font-size:.95rem;color:var(--text);}
+  .review-meta{
+    font-family:"JetBrains Mono",monospace;font-size:.65rem;
+    letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:2px;
+  }
+  .review-text{color:var(--muted);font-size:.92rem;line-height:1.6;margin:0;flex:1;}
+  .review-rating{color:var(--lime);font-family:"JetBrains Mono",monospace;font-size:.85rem;letter-spacing:.15em;}
+
+  .review-form-wrapper{
+    background:var(--panel);border:1px solid var(--line);padding:32px 28px;
+  }
+  .review-form-head{
+    display:flex;justify-content:space-between;align-items:center;
+    margin-bottom:24px;flex-wrap:wrap;gap:8px;
+  }
+  .review-form-head .mono{color:var(--lime);}
+  .review-form-head .mono:last-child{color:var(--muted);}
+  .review-form{display:flex;flex-direction:column;gap:20px;}
+  .review-form label{display:flex;flex-direction:column;gap:8px;}
+  .review-form label .mono{color:var(--muted);font-size:.7rem;}
+  .review-form input,.review-form textarea{
+    background:var(--panel-2);border:1px solid var(--line);
+    padding:12px 14px;color:var(--text);font-family:"JetBrains Mono",monospace;
+    font-size:.85rem;transition:border-color .2s ease;width:100%;
+  }
+  .review-form input::placeholder,.review-form textarea::placeholder{color:var(--muted-2);}
+  .review-form input:focus,.review-form textarea:focus{outline:none;border-color:var(--lime);}
+  .review-form textarea{resize:vertical;min-height:110px;font-family:"Space Grotesk",sans-serif;font-size:.9rem;}
+  .form-row{display:grid;grid-template-columns:1fr;gap:20px;}
+  @media(min-width:720px){.form-row{grid-template-columns:1fr 1fr;}}
+  .review-form-foot{display:flex;justify-content:flex-end;align-items:center;flex-wrap:wrap;gap:12px;}
+
+  .about-grid{display:grid;grid-template-columns:1fr;gap:24px;}
+  @media(min-width:900px){.about-grid{grid-template-columns:320px 1fr;}}
+
+  .explorer{background:var(--panel);border:1px solid var(--line);padding-bottom:16px;}
+  .explorer-head{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line);}
+  .tree{list-style:none;margin:0;padding:10px 0;font-family:"JetBrains Mono",monospace;font-size:.8rem;}
+  .tree ul{list-style:none;margin:0;padding:0 0 0 18px;}
+  .tree-row{display:flex;align-items:center;gap:8px;padding:6px 16px;color:var(--muted);cursor:default;transition:color .2s ease,background .2s ease;}
+  .tree-row:hover{color:var(--text);background:var(--panel-2);}
+  .tree-row .caret{width:10px;color:var(--muted);font-size:.7rem;}
+  .tree-row .icon{width:10px;height:10px;display:inline-block;background:var(--indigo);flex-shrink:0;}
+  .tree-row .icon.script{background:var(--lime);width:8px;height:10px;}
+  .tree-row .icon.module{background:var(--indigo);width:8px;height:10px;}
+  .tree-row .icon.folder{background:transparent;border:1px solid var(--indigo);}
+
+  .script{
+    background:var(--panel);border:1px solid var(--line);margin:0;
+    overflow-x:auto;font-family:"JetBrains Mono",monospace;
+    font-size:.82rem;line-height:1.75;color:var(--text);
+  }
+  .script-head{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line);background:var(--panel-2);}
+  .script pre{margin:0;padding:20px 24px;}
+  .script code{white-space:pre;}
+  .tk-kw{color:var(--indigo);}
+  .tk-str{color:#e6f0ff;}
+  .tk-num{color:var(--lime);}
+  .tk-com{color:#5a6377;font-style:italic;}
+  .tk-key{color:#ffd166;}
+
+  .services{display:grid;grid-template-columns:1fr;gap:16px;}
+  @media(min-width:720px){.services{grid-template-columns:repeat(2,1fr);}}
+  .service{
+    background:var(--panel);border:1px solid var(--line);padding:32px 28px;
+    transition:border-color .3s ease,transform .3s ease,background .3s ease;
+  }
+  .service:hover{border-color:var(--lime);transform:translateY(-3px);background:var(--panel-2);}
+  .service.learning{border-style:dashed;background:transparent;}
+  .service.learning:hover{border-color:var(--indigo);background:rgba(110,123,255,.04);}
+  .service.learning h3{color:var(--muted);}
+  .service.learning .badge{
+    display:inline-block;padding:3px 8px;margin-left:8px;
+    font-family:"JetBrains Mono",monospace;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;
+    border:1px dashed var(--indigo);color:var(--indigo);vertical-align:middle;
+  }
+  .service h3{font-size:1.5rem;font-weight:700;letter-spacing:-.02em;margin:16px 0 12px;}
+  .service p{color:var(--muted);margin:0;font-size:.95rem;}
+
+  .process{display:grid;grid-template-columns:1fr;gap:16px;counter-reset:step;}
+  @media(min-width:720px){.process{grid-template-columns:repeat(2,1fr);}}
+  @media(min-width:1024px){.process{grid-template-columns:repeat(4,1fr);}}
+  .step{
+    background:var(--panel);border:1px solid var(--line);
+    padding:28px 24px;position:relative;
+    transition:border-color .3s ease,background .3s ease;
+  }
+  .step:hover{border-color:var(--roblox);background:var(--panel-2);}
+  .step-num{
+    font-family:"JetBrains Mono",monospace;
+    font-size:.7rem;letter-spacing:.14em;
+    color:var(--roblox);margin-bottom:16px;
+    display:block;
+  }
+  .step h3{font-size:1.15rem;font-weight:700;margin:0 0 8px;letter-spacing:-.01em;}
+  .step p{color:var(--muted);margin:0;font-size:.9rem;line-height:1.55;}
+
+  .pricing-note{
+    margin-top:32px;padding:22px 26px;
+    border:1px solid var(--line);
+    background:var(--panel);
+    display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;
+  }
+  .pricing-note .pn-title{
+    font-family:"JetBrains Mono",monospace;font-size:.8rem;
+    text-transform:uppercase;letter-spacing:.1em;color:var(--lime);font-weight:600;
+  }
+  .pricing-note .pn-desc{color:var(--muted);font-size:.9rem;margin-top:4px;}
+
+  .toolbox-grid{display:grid;grid-template-columns:1fr;gap:24px;}
+  @media(min-width:900px){.toolbox-grid{grid-template-columns:1fr 1fr;}}
+  .tag-groups{display:flex;flex-direction:column;gap:24px;background:var(--panel);border:1px solid var(--line);padding:28px;}
+  .tag-group .mono{display:block;margin-bottom:12px;}
+  .tags{display:flex;flex-wrap:wrap;gap:8px;}
+  .tag{
+    padding:6px 12px;border:1px solid var(--line);
+    font-family:"JetBrains Mono",monospace;font-size:.72rem;letter-spacing:.04em;color:var(--text);
+    transition:border-color .2s ease,color .2s ease;
+  }
+  .tag:hover{border-color:var(--lime);color:var(--lime);}
+  .tag.learning{color:var(--indigo);border-style:dashed;border-color:var(--indigo);}
+  .tag.learning:hover{color:var(--indigo);background:rgba(110,123,255,.08);}
+  .tag.weak{color:#5a6377;border-color:#2a2d36;text-decoration:line-through;text-decoration-thickness:1px;}
+  .tag.weak:hover{color:var(--muted);border-color:#3a3d46;}
+
+  .properties{background:var(--panel);border:1px solid var(--line);}
+  .properties-head{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;border-bottom:1px solid var(--line);}
+  .properties ul{list-style:none;margin:0;padding:0;}
+  .properties li{
+    display:grid;grid-template-columns:140px 1fr;gap:16px;
+    padding:14px 20px;border-bottom:1px solid var(--line);
+    font-family:"JetBrains Mono",monospace;font-size:.78rem;align-items:center;
+  }
+  .properties li:last-child{border-bottom:0;}
+  .properties .pk{color:var(--muted);letter-spacing:.08em;text-transform:uppercase;font-size:.7rem;}
+  .properties .pv{color:var(--text);}
+  .properties .pv .accent{color:var(--lime);}
+  .properties .pv .dim{color:var(--muted);}
+
+  .faq{display:flex;flex-direction:column;gap:0;border-top:1px solid var(--line);}
+  .faq details{border-bottom:1px solid var(--line);padding:0;}
+  .faq summary{
+    padding:22px 8px;cursor:pointer;
+    font-size:clamp(1rem,1.6vw,1.15rem);font-weight:500;letter-spacing:-.01em;
+    display:flex;justify-content:space-between;align-items:center;gap:24px;
+    list-style:none;transition:color .2s ease;
+  }
+  .faq summary::-webkit-details-marker{display:none;}
+  .faq summary::after{
+    content:"+";font-family:"JetBrains Mono",monospace;
+    color:var(--lime);font-size:1.4rem;line-height:1;transition:transform .3s ease;
+  }
+  .faq details[open] summary::after{content:"−";transform:rotate(180deg);}
+  .faq summary:hover{color:var(--lime);}
+  .faq .faq-body{padding:0 8px 24px;color:var(--muted);max-width:70ch;line-height:1.7;}
+  .faq .faq-body strong{color:var(--text);font-weight:600;}
+
+  .console{background:#07080B;border:1px solid var(--line);font-family:"JetBrains Mono",monospace;font-size:.82rem;overflow:hidden;}
+  .console-head{display:flex;justify-content:space-between;align-items:center;padding:12px 20px;background:var(--panel-2);border-bottom:1px solid var(--line);}
+  .console-head .live{display:inline-flex;align-items:center;gap:8px;color:var(--lime);}
+  .console-head .live .dot{animation:pulse 1.6s ease-in-out infinite;}
+  .console-log{list-style:none;margin:0;padding:16px 20px;line-height:1.9;}
+  .console-log li{display:grid;grid-template-columns:90px 60px 1fr;gap:14px;align-items:baseline;}
+  @media(max-width:720px){.console-log li{grid-template-columns:1fr;gap:4px;padding-bottom:8px;}}
+  .log-time{color:#5a6377;}
+  .log-info{color:var(--indigo);}
+  .log-warn{color:#ffd166;}
+  .log-ok{color:var(--lime);}
+  .log-msg{color:var(--text);}
+  .log-msg strong{color:var(--lime);font-weight:600;}
+  .log-msg .dim{color:var(--muted);}
+
+  .connect h2{font-size:clamp(2.25rem,6vw,4.5rem);font-weight:700;letter-spacing:-.03em;line-height:1;margin:14px 0 32px;max-width:16ch;}
+  .connect-alt{margin-top:0;display:flex;gap:12px;flex-wrap:wrap;}
+  .copy-btn{
+    display:inline-flex;align-items:center;gap:10px;
+    padding:14px 22px;border:1px solid var(--line);background:var(--panel);
+    color:var(--text);font-family:"JetBrains Mono",monospace;font-size:.8rem;letter-spacing:.06em;
+    cursor:pointer;transition:border-color .2s ease,background .2s ease,color .2s ease;
+  }
+  .copy-btn:hover{border-color:var(--lime);color:var(--lime);}
+  .copy-btn .cb-key{color:var(--muted);text-transform:uppercase;font-size:.7rem;letter-spacing:.1em;}
+  .copy-btn .cb-val{color:var(--text);font-weight:500;}
+  .copy-btn:hover .cb-val{color:var(--lime);}
+  .copy-btn .cb-icon{margin-left:4px;opacity:.7;}
+
+  .toast{
+    position:fixed;bottom:calc(var(--statusbar-h) + env(safe-area-inset-bottom) + 20px);
+    left:50%;transform:translate(-50%,20px);
+    background:var(--lime);color:#0A0B0F;padding:12px 20px;
+    font-family:"JetBrains Mono",monospace;font-size:.8rem;letter-spacing:.06em;font-weight:600;
+    z-index:70;opacity:0;pointer-events:none;transition:opacity .25s ease,transform .25s ease;
+  }
+  .toast.visible{opacity:1;transform:translate(-50%,0);}
+
+  .back-top{
+    position:fixed;bottom:calc(var(--statusbar-h) + env(safe-area-inset-bottom) + 20px);right:20px;
+    width:44px;height:44px;background:var(--panel);border:1px solid var(--line);
+    color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;
+    z-index:60;opacity:0;pointer-events:none;
+    transition:opacity .25s ease,border-color .2s ease,color .2s ease,transform .2s ease;
+    font-family:"JetBrains Mono",monospace;font-size:1.1rem;
+  }
+  .back-top.visible{opacity:1;pointer-events:auto;}
+  .back-top:hover{border-color:var(--lime);color:var(--lime);transform:translateY(-2px);}
+
+  .footer{display:flex;justify-content:space-between;align-items:center;padding:24px 28px;border-top:1px solid var(--line);flex-wrap:wrap;gap:12px;}
+
+  .reveal{opacity:0;transform:translateY(24px);transition:opacity .8s cubic-bezier(.2,.7,.2,1),transform .8s cubic-bezier(.2,.7,.2,1);transition-delay:var(--d,0s);}
+  .reveal.in{opacity:1;transform:none;}
+
+  @media (prefers-reduced-motion: reduce){
+    html{scroll-behavior:auto;}
+    .dot,.hero-badge .badge-dot,.console-head .live .dot{animation:none;}
+    .reveal{opacity:1;transform:none;transition:none;}
+    .service,.btn,.tag,.step,.copy-btn,.back-top,.project,.review,.hud-cta{transition:none;}
+    .ticker-track{animation:none;}
+    body{transition:none;}
+  }
+
+  @media (max-width:900px){
+    .hero{padding:0 24px 80px;padding-bottom:max(80px, calc(env(safe-area-inset-bottom) + 40px));}
+    .section{padding:80px 24px;scroll-margin-top:70px;}
+    .properties li{grid-template-columns:120px 1fr;}
+  }
+
+  @media (max-width:720px){
+    .hud-top{padding:14px 20px;padding-top:max(14px, env(safe-area-inset-top));}
+    .hero{padding:0 20px 60px;padding-bottom:max(60px, calc(env(safe-area-inset-bottom) + 20px));}
+    .section{padding:64px 20px;}
+    .footer{padding:20px;padding-bottom:max(20px, env(safe-area-inset-bottom));}
+    .hero-badge{padding:12px 14px;font-size:.7rem;}
+    .ticker-content{font-size:.7rem;gap:20px;}
+    .copy-btn{padding:12px 16px;font-size:.75rem;}
+    .pricing-note{padding:16px;}
+    .console-log li{grid-template-columns:1fr;}
+    .properties li{grid-template-columns:100px 1fr;font-size:.75rem;}
+    .review-form-wrapper{padding:24px 20px;}
+    .review-form-foot .btn{width:100%;justify-content:center;}
+  }
+
+  @media (max-height: 600px) and (orientation: landscape) {
+    .hero { min-height: auto; padding-top: 100px; padding-bottom: 60px; align-items: center; }
+    .hero h1 { font-size: 4rem; margin-bottom: 12px; }
+    .lede { font-size: .95rem; margin-bottom: 20px; }
+    .viewport-tag { display: none; }
+    .section { padding: 60px 28px; }
+    .hud-top { position: absolute; background: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="progress" aria-hidden="true"><div class="progress-bar"></div></div>
+
+<header class="hud-top">
+  <span class="mono">// DRAC311.STUDIO</span>
+  <div class="hud-actions">
+    <span class="mono hud-status"><span class="dot"></span> OPEN FOR WORK</span>
+    <a class="hud-cta" href="#connect">Contacto ↗</a>
+  </div>
+</header>
+
+<main>
+  <section class="hero" id="hero">
+    <canvas id="scene" aria-hidden="true"></canvas>
+
+    <div class="hero-copy">
+      <div class="viewport-tag">
+        <span class="camera-dot"></span> Viewport · Perspective
+      </div>
+
+      <p class="mono kicker">Roblox Developer · Luau · Scripting · DataStorage</p>
+      <h1>Drac<span class="accent">311</span></h1>
+      <p class="lede">
+        Scripting y DataStorage son mi terreno. Estoy aprendiendo GUI.
+        Modeling y building no van conmigo — y prefiero decirlo claro.
+        Abierto a colaboraciones.
+      </p>
+      <div class="hero-actions">
+        <a class="btn primary" href="#player">Sobre mí</a>
+        <a class="btn ghost" href="#connect">Contacto</a>
+        <span class="hero-badge" aria-label="Más de 700 followers en Roblox">
+          <span class="badge-dot" aria-hidden="true"></span>
+          700+ Followers
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <div class="ticker" aria-hidden="true">
+    <div class="ticker-track">
+      <div class="ticker-content">
+        <span class="hl">● OPEN FOR WORK</span><span class="dot-sep">/</span>
+        <span>SCRIPTING</span><span class="dot-sep">/</span>
+        <span>DATASTORAGE</span><span class="dot-sep">/</span>
+        <span>PROFILE SERVICE</span><span class="dot-sep">/</span>
+        <span class="hl-roblox">PER JOB PRICING</span><span class="dot-sep">/</span>
+        <span class="warn">GUI · LEARNING</span><span class="dot-sep">/</span>
+        <span>MODELING · NO</span><span class="dot-sep">/</span>
+        <span>BUILDING · NO</span><span class="dot-sep">/</span>
+      </div>
+      <div class="ticker-content" aria-hidden="true">
+        <span class="hl">● OPEN FOR WORK</span><span class="dot-sep">/</span>
+        <span>SCRIPTING</span><span class="dot-sep">/</span>
+        <span>DATASTORAGE</span><span class="dot-sep">/</span>
+        <span>PROFILE SERVICE</span><span class="dot-sep">/</span>
+        <span class="hl-roblox">PER JOB PRICING</span><span class="dot-sep">/</span>
+        <span class="warn">GUI · LEARNING</span><span class="dot-sep">/</span>
+        <span>MODELING · NO</span><span class="dot-sep">/</span>
+        <span>BUILDING · NO</span><span class="dot-sep">/</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 01 / Player -->
+  <section class="section" id="player">
+    <div class="section-inner">
+      <header class="section-head reveal">
+        <span class="mono">01 / Player</span>
+        <h2>Lo que domino, lo que aprendo y lo que no</h2>
+      </header>
+
+      <div class="about-grid">
+        <aside class="explorer reveal" style="--d:.05s" aria-label="Explorer de perfil">
+          <div class="explorer-head">
+            <span class="mono">Explorer</span>
+            <span class="mono">▾</span>
+          </div>
+          <ul class="tree">
+            <li>
+              <div class="tree-row">
+                <span class="caret">▾</span>
+                <span class="icon folder" aria-hidden="true"></span>
+                <span>Player</span>
+              </div>
+              <ul>
+                <li>
+                  <div class="tree-row"><span class="caret">▾</span><span class="icon" aria-hidden="true"></span><span>Drac311</span></div>
+                  <ul>
+                    <li><div class="tree-row"><span class="caret"></span><span class="icon script" aria-hidden="true"></span><span>Profile.lua</span></div></li>
+                    <li>
+                      <div class="tree-row"><span class="caret">▾</span><span class="icon folder" aria-hidden="true"></span><span>Strong</span></div>
+                      <ul>
+                        <li><div class="tree-row"><span class="caret"></span><span class="icon module" aria-hidden="true"></span><span>Scripting</span></div></li>
+                        <li><div class="tree-row"><span class="caret"></span><span class="icon module" aria-hidden="true"></span><span>DataStorage</span></div></li>
+                        <li><div class="tree-row"><span class="caret"></span><span class="icon module" aria-hidden="true"></span><span>Tooling</span></div></li>
+                      </ul>
+                    </li>
+                    <li>
+                      <div class="tree-row"><span class="caret">▾</span><span class="icon folder" aria-hidden="true"></span><span>Learning</span></div>
+                      <ul>
+                        <li><div class="tree-row"><span class="caret"></span><span class="icon module" aria-hidden="true"></span><span>GUI</span></div></li>
+                      </ul>
+                    </li>
+                    <li>
+                      <div class="tree-row"><span class="caret">▾</span><span class="icon folder" aria-hidden="true"></span><span>Weak</span></div>
+                      <ul>
+                        <li><div class="tree-row"><span class="caret"></span><span class="icon module" aria-hidden="true"></span><span>Modeling</span></div></li>
+                        <li><div class="tree-row"><span class="caret"></span><span class="icon module" aria-hidden="true"></span><span>Building</span></div></li>
+                      </ul>
+                    </li>
+                    <li><div class="tree-row"><span class="caret"></span><span class="icon script" aria-hidden="true"></span><span>Contact.md</span></div></li>
+                  </ul>
+                </li>
+              </ul>
+            </li>
+          </ul>
+        </aside>
+
+        <div class="script reveal" style="--d:.1s" role="region" aria-label="Profile.lua">
+          <div class="script-head">
+            <span class="mono">Profile.lua</span>
+            <span class="mono">Luau · UTF-8</span>
+          </div>
+<pre><code><span class="tk-com">-- Profile.lua</span>
+<span class="tk-com">-- Player: Drac311 · Roblox developer</span>
+
+<span class="tk-kw">local</span> Drac311 = {
+    <span class="tk-key">name</span>      = <span class="tk-str">"Drac311"</span>,
+    <span class="tk-key">role</span>      = <span class="tk-str">"Roblox Developer"</span>,
+    <span class="tk-key">status</span>    = <span class="tk-str">"Open for collaborations"</span>,
+    <span class="tk-key">followers</span> = <span class="tk-str">"700+"</span>,
+
+    <span class="tk-key">strong</span>    = { <span class="tk-str">"Scripting"</span>, <span class="tk-str">"DataStorage"</span>, <span class="tk-str">"Tooling"</span> },
+    <span class="tk-key">learning</span>  = { <span class="tk-str">"GUI"</span> },
+    <span class="tk-key">weak</span>      = { <span class="tk-str">"Modeling"</span>, <span class="tk-str">"Building"</span> },
+
+    <span class="tk-key">pricing</span>   = <span class="tk-str">"Per job — not percentage"</span>,
+    <span class="tk-key">contact</span>   = {
+        discord = <span class="tk-str">"eldraxi"</span>,
+        roblox  = <span class="tk-str">"drac311"</span>,
+    },
+}
+
+<span class="tk-kw">return</span> Drac311</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 02 / Projects -->
+  <section class="section" id="projects">
+    <div class="section-inner">
+      <header class="section-head reveal">
+        <span class="mono">02 / Projects</span>
+        <h2>Trabajo real, con contexto</h2>
+      </header>
+
+      <div class="projects-grid">
+        <article class="project reveal" style="--d:.05s">
+          <div class="project-head">
+            <span class="mono">/ script</span>
+            <span class="mono project-type">Luau · Server</span>
+          </div>
+          <h3>Inventory System</h3>
+          <dl class="project-body">
+            <dt>Problema</dt>
+            <dd>El juego perdía ítems al reconectar y no aguantaba más de 50 ítems por jugador.</dd>
+            <dt>Rol</dt>
+            <dd>Scripting completo del sistema y de la persistencia.</dd>
+            <dt>Decisión</dt>
+            <dd>ProfileService + estructura de datos versionada. Server-authoritative, sin confiar en el cliente.</dd>
+            <dt>Resultado</dt>
+            <dd>0 pérdidas en 200 reconexiones de prueba. Escala a 500 ítems sin lag perceptible.</dd>
+          </dl>
+          <div class="project-foot">
+            <div class="tags">
+              <span class="tag">Luau</span>
+              <span class="tag">ProfileService</span>
+              <span class="tag">DataStore</span>
+            </div>
+            <a class="project-link" href="#connect">Contactar ↗</a>
+          </div>
+        </article>
+
+        <article class="project reveal" style="--d:.1s">
+          <div class="project-head">
+            <span class="mono">/ data</span>
+            <span class="mono project-type">DataStore · OrderedDataStore</span>
+          </div>
+          <h3>Global Leaderboard</h3>
+          <dl class="project-body">
+            <dt>Problema</dt>
+            <dd>El ranking global se saturaba y devolvía datos viejos a los jugadores.</dd>
+            <dt>Rol</dt>
+            <dd>Diseño del modelo de datos y capa de caché en servidor.</dd>
+            <dt>Decisión</dt>
+            <dd>OrderedDataStore para el top + caché en memoria con TTL corto y refresco asíncrono.</dd>
+            <dt>Resultado</dt>
+            <dd>Ranking siempre fresco, sin picos de latencia en horas punta.</dd>
+          </dl>
+          <div class="project-foot">
+            <div class="tags">
+              <span class="tag">DataStore</span>
+              <span class="tag">OrderedDataStore</span>
+              <span class="tag">Caching</span>
+            </div>
+            <a class="project-link" href="#connect">Contactar ↗</a>
+          </div>
+        </article>
+
+        <article class="project reveal" style="--d:.15s">
+          <div class="project-head">
+            <span class="mono">/ migration</span>
+            <span class="mono project-type">DataStore · Tooling</span>
+          </div>
+          <h3>Data Migration & Versioning</h3>
+          <dl class="project-body">
+            <dt>Problema</dt>
+            <dd>Cambiar el esquema de guardado rompía las partidas de jugadores antiguos.</dd>
+            <dt>Rol</dt>
+            <dd>Diseño del sistema de migración y del pipeline de validación.</dd>
+            <dt>Decisión</dt>
+            <dd>Versionado de esquema + migradores encadenados + fallback seguro con backup previo.</dd>
+            <dt>Resultado</dt>
+            <dd>Actualizaciones de esquema sin downtime y sin pérdida de datos en producción.</dd>
+          </dl>
+          <div class="project-foot">
+            <div class="tags">
+              <span class="tag">DataStore</span>
+              <span class="tag">Rojo</span>
+              <span class="tag">Git</span>
+            </div>
+            <a class="project-link" href="#connect">Contactar ↗</a>
+          </div>
+        </article>
+
+        <article class="project project-empty reveal" style="--d:.2s">
+          <div class="project-head">
+            <span class="mono">/ next</span>
+          </div>
+          <h3>Tu proyecto aquí</h3>
+          <p>Estoy abierto a nuevos trabajos de scripting y DataStorage. Si tienes un brief, hablamos.</p>
+          <div class="project-foot">
+            <a class="btn ghost" href="#connect">Contacto →</a>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- 03 / Modules -->
+  <section class="section" id="modules">
+    <div class="section-inner">
+      <header class="section-head reveal">
+        <span class="mono">03 / Modules</span>
+        <h2>Lo que puedo aportar a tu proyecto</h2>
+      </header>
+
+      <div class="services">
+        <article class="service reveal" style="--d:.05s">
+          <span class="mono">/ strong</span>
+          <h3>Scripting</h3>
+          <p>Luau con arquitectura limpia: sistemas de juego, inventarios, mecánicas, combate, matchmaking. Código modular y legible.</p>
+        </article>
+
+        <article class="service reveal" style="--d:.1s">
+          <span class="mono">/ strong</span>
+          <h3>DataStorage</h3>
+          <p>Persistencia de datos sólida: profiles, leaderboards, saves resistentes a caídas. Sin atajos que rompan partidas.</p>
+        </article>
+
+        <article class="service reveal" style="--d:.15s">
+          <span class="mono">/ strong</span>
+          <h3>Tooling</h3>
+          <p>Rojo, Wally, Git y plugins internos. Pipeline listo antes del primer script si el proyecto lo pide.</p>
+        </article>
+
+        <article class="service learning reveal" style="--d:.2s">
+          <span class="mono">/ learning</span>
+          <h3>GUI <span class="badge">aprendiendo</span></h3>
+          <p>Actualmente aprendiendo interfaces en Roblox. Prefiero ser honesto: aún no es mi fuerte. Con tiempo, lo será.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- 04 / Process -->
+  <section class="section" id="process">
+    <div class="section-inner">
+      <header class="section-head reveal">
+        <span class="mono">04 / Process</span>
+        <h2>Cómo se trabaja conmigo</h2>
+      </header>
+
+      <div class="process">
+        <div class="step reveal" style="--d:.05s">
+          <span class="step-num">STEP / 01</span>
+          <h3>Brief</h3>
+          <p>Me cuentas el scope: qué necesitas, referencias, plazo y presupuesto aproximado. Sin compromiso.</p>
+        </div>
+        <div class="step reveal" style="--d:.1s">
+          <span class="step-num">STEP / 02</span>
+          <h3>Estimate</h3>
+          <p>En menos de 48h recibes un presupuesto cerrado y un timeline realista. Per job. Sin sorpresas.</p>
+        </div>
+        <div class="step reveal" style="--d:.15s">
+          <span class="step-num">STEP / 03</span>
+          <h3>Build</h3>
+          <p>Durante el desarrollo tienes acceso a builds privadas y updates regulares. Feedback iterativo.</p>
+        </div>
+        <div class="step reveal" style="--d:.2s">
+          <span class="step-num">STEP / 04</span>
+          <h3>Deliver</h3>
+          <p>Entrega con documentación mínima, archivos limpios y soporte post-entrega durante 7 días.</p>
+        </div>
+      </div>
+
+      <div class="pricing-note reveal" style="--d:.25s">
+        <div>
+          <div class="pn-title">Pricing · Per job</div>
+          <div class="pn-desc">Presupuesto cerrado por proyecto. Sin porcentajes, sin revenue share, sin sorpresas.</div>
+        </div>
+        <span class="mono" style="color:var(--muted);">No % · Fixed scope</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 05 / Toolbox -->
+  <section class="section" id="toolbox">
+    <div class="section-inner">
+      <header class="section-head reveal">
+        <span class="mono">05 / Toolbox</span>
+        <h2>Stack, aprendizaje y límites</h2>
+      </header>
+
+      <div class="toolbox-grid">
+        <div class="tag-groups reveal" style="--d:.05s">
+          <div class="tag-group">
+            <span class="mono">Strong</span>
+            <div class="tags">
+              <span class="tag">Luau</span>
+              <span class="tag">DataStore</span>
+              <span class="tag">ProfileService</span>
+              <span class="tag">Knit</span>
+              <span class="tag">Rojo</span>
+              <span class="tag">Wally</span>
+              <span class="tag">Git</span>
+            </div>
+          </div>
+          <div class="tag-group">
+            <span class="mono">Learning</span>
+            <div class="tags">
+              <span class="tag learning">GUI</span>
+              <span class="tag learning">React-lua</span>
+              <span class="tag learning">Fusion</span>
+              <span class="tag learning">TweenService</span>
+            </div>
+          </div>
+          <div class="tag-group">
+            <span class="mono">No es lo mío</span>
+            <div class="tags">
+              <span class="tag weak">Modeling</span>
+              <span class="tag weak">Building</span>
+              <span class="tag weak">3D Art</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="properties reveal" style="--d:.1s" role="region" aria-label="Propiedades">
+          <div class="properties-head">
+            <span class="mono">Properties</span>
+            <span class="mono">Drac311</span>
+          </div>
+          <ul>
+            <li><span class="pk">Name</span><span class="pv">"Drac311"</span></li>
+            <li><span class="pk">Role</span><span class="pv">Roblox Developer</span></li>
+            <li><span class="pk">Status</span><span class="pv"><span class="accent">●</span> Open for work</span></li>
+            <li><span class="pk">Followers</span><span class="pv"><span class="accent">700+</span></span></li>
+            <li><span class="pk">Strong</span><span class="pv">Scripting · DataStorage</span></li>
+            <li><span class="pk">Learning</span><span class="pv">GUI</span></li>
+            <li><span class="pk">Weak</span><span class="pv dim">Modeling · Building</span></li>
+            <li><span class="pk">Pricing</span><span class="pv">Per job</span></li>
+            <li><span class="pk">Discord</span><span class="pv">eldraxi</span></li>
+            <li><span class="pk">Roblox</span><span class="pv">drac311</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 06 / FAQ -->
+  <section class="section" id="faq">
+    <div class="section-inner">
+      <header class="section-head reveal">
+        <span class="mono">06 / FAQ</span>
+        <h2>Preguntas honestas, respuestas honestas</h2>
+      </header>
+
+      <div class="faq reveal" style="--d:.05s">
+        <details>
+          <summary>¿Cómo cobras?</summary>
+          <div class="faq-body">Por trabajo. Presupuesto cerrado acordado antes de empezar. <strong>No tomo porcentajes ni revenue share</strong> — prefiero precio fijo por proyecto.</div>
+        </details>
+        <details>
+          <summary>¿Puedes modelar o construir?</summary>
+          <div class="faq-body">No. Y prefiero decirlo antes de empezar. Si tu proyecto necesita modeling o building, no soy el developer que buscas. <strong>Scripting y DataStorage</strong> sí.</div>
+        </details>
+        <details>
+          <summary>¿Y las GUIs?</summary>
+          <div class="faq-body">Aún aprendiendo. Puedo hacer interfaces básicas, pero sistemas complejos de UI todavía no son mi fuerte. Estoy en ello — <strong>prefiero ser honesto</strong> antes que prometer y no llegar.</div>
+        </details>
+        <details>
+          <summary>¿Cuánto tardas en un proyecto?</summary>
+          <div class="faq-body">Depende del scope. Una vez recibo el brief, te doy <strong>presupuesto y timeline en 48h</strong>. Proyectos pequeños pueden cerrarse en días; sistemas completos, en semanas. Sin compromiso hasta que apruebes.</div>
+        </details>
+        <details>
+          <summary>¿Trabajas en equipo?</summary>
+          <div class="faq-body">Sí. Solo o dentro de un equipo como scripter. Si el proyecto ya tiene un pipeline, me adapto. Si no lo tiene, monto uno mínimo (Rojo + Git) antes de escribir el primer script.</div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- 07 / Reviews -->
+  <section class="section" id="reviews">
+    <div class="section-inner">
+      <header class="section-head reveal">
+        <span class="mono">07 / Reviews</span>
+        <h2>Lo que dicen quienes han trabajado conmigo</h2>
+      </header>
+
+      <div class="reviews-grid">
+        <article class="review reveal" style="--d:.05s">
+          <div class="review-head">
+            <span class="review-avatar" aria-hidden="true">A</span>
+            <div>
+              <div class="review-name">Alex</div>
+              <div class="review-meta">Game Lead · Project placeholder</div>
+            </div>
+          </div>
+          <p class="review-text">"Necesitábamos un sistema de inventario sólido y Drac lo entregó con tiempo y documentado. Cero pérdidas de datos en producción."</p>
+          <div class="review-rating" aria-label="5 de 5 estrellas">★★★★★</div>
+        </article>
+
+        <article class="review reveal" style="--d:.1s">
+          <div class="review-head">
+            <span class="review-avatar" aria-hidden="true">M</span>
+            <div>
+              <div class="review-name">Mira</div>
+              <div class="review-meta">Producer · Project placeholder</div>
+            </div>
+          </div>
+          <p class="review-text">"Comunicación clara desde el primer brief. Nos dio presupuesto cerrado en 48h y lo cumplió. Repetiremos en el siguiente proyecto."</p>
+          <div class="review-rating" aria-label="5 de 5 estrellas">★★★★★</div>
+        </article>
+
+        <article class="review reveal" style="--d:.15s">
+          <div class="review-head">
+            <span class="review-avatar" aria-hidden="true">K</span>
+            <div>
+              <div class="review-name">Kai</div>
+              <div class="review-meta">Solo dev · Project placeholder</div>
+            </div>
+          </div>
+          <p class="review-text">"Honesto con lo que sabe y con lo que no. Prefiero eso a alguien que promete todo. El sistema de DataStore que montó no ha fallado ni una vez."</p>
+          <div class="review-rating" aria-label="5 de 5 estrellas">★★★★★</div>
+        </article>
+      </div>
+
+      <div class="review-form-wrapper reveal" style="--d:.2s">
+        <div class="review-form-head">
+          <span class="mono">// Add your review</span>
+          <span class="mono">Demo only — no data sent</span>
+        </div>
+        <form class="review-form" id="review-form" novalidate>
+          <div class="form-row">
+            <label>
+              <span class="mono">Nombre / Rol</span>
+              <input type="text" name="name" placeholder="Tu nombre o rol" />
+            </label>
+            <label>
+              <span class="mono">Proyecto</span>
+              <input type="text" name="project" placeholder="En qué trabajamos juntos" />
+            </label>
+          </div>
+          <label>
+            <span class="mono">Reseña</span>
+            <textarea name="review" rows="4" placeholder="Cuenta tu experiencia trabajando conmigo..."></textarea>
+          </label>
+          <div class="review-form-foot">
+            <button type="submit" class="btn primary">Enviar reseña</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- 08 / Output -->
+  <section class="section" id="output">
+    <div class="section-inner">
+      <header class="section-head reveal">
+        <span class="mono">08 / Output</span>
+        <h2>Estado actual, sin adornos</h2>
+      </header>
+
+      <div class="console reveal" style="--d:.05s" role="log" aria-label="Output del portfolio">
+        <div class="console-head">
+          <span class="mono">// Output</span>
+          <span class="mono live"><span class="dot"></span> Live</span>
+        </div>
+        <ul class="console-log">
+          <li><span class="log-time">[--:--:--]</span><span class="log-ok">INFO</span><span class="log-msg">Portfolio inicializado.</span></li>
+          <li><span class="log-time">[--:--:--]</span><span class="log-info">INFO</span><span class="log-msg">Status: <strong>Open for collaborations</strong>.</span></li>
+          <li><span class="log-time">[--:--:--]</span><span class="log-info">INFO</span><span class="log-msg">Followers: <strong>700+</strong> <span class="dim">— Roblox profile.</span></span></li>
+          <li><span class="log-time">[--:--:--]</span><span class="log-info">INFO</span><span class="log-msg">Strong: <strong>Scripting · DataStorage · Tooling</strong>.</span></li>
+          <li><span class="log-time">[--:--:--]</span><span class="log-warn">WARN</span><span class="log-msg">Learning: <strong>GUI</strong> <span class="dim">— work in progress.</span></span></li>
+          <li><span class="log-time">[--:--:--]</span><span class="log-warn">WARN</span><span class="log-msg">Not good at: <span class="dim">Modeling · Building.</span></span></li>
+          <li><span class="log-time">[--:--:--]</span><span class="log-ok">INFO</span><span class="log-msg">Pricing: <strong>Per job</strong> <span class="dim">— not percentage.</span></span></li>
+          <li><span class="log-time">[--:--:--]</span><span class="log-info">INFO</span><span class="log-msg">Contact: <strong>Discord eldraxi</strong> · <strong>Roblox drac311</strong>.</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 09 / Connect -->
+  <section class="section" id="connect">
+    <div class="section-inner connect reveal">
+      <span class="mono">09 / Connect</span>
+      <h2>¿Hablamos?</h2>
+      <div class="connect-alt">
+        <button class="copy-btn" data-copy="eldraxi" aria-label="Copiar Discord: eldraxi">
+          <span class="cb-key">Discord</span>
+          <span class="cb-val">eldraxi</span>
+          <span class="cb-icon" aria-hidden="true">⧉</span>
+        </button>
+        <button class="copy-btn" data-copy="drac311" aria-label="Copiar Roblox: drac311">
+          <span class="cb-key">Roblox</span>
+          <span class="cb-val">drac311</span>
+          <span class="cb-icon" aria-hidden="true">⧉</span>
+        </button>
+        <a class="copy-btn" href="https://www.roblox.com/users/profile?username=drac311" target="_blank" rel="noopener">
+          <span class="cb-key">Profile</span>
+          <span class="cb-val">Roblox.com</span>
+          <span class="cb-icon" aria-hidden="true">↗</span>
+        </a>
+      </div>
+      <p class="mono" style="margin-top:32px;color:var(--muted);">
+        // Pricing: per job — no revenue share. Brief → estimate within 48h.
+      </p>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <span class="mono">© <span id="year">2025</span> Drac311</span>
+  <span class="mono">Built with Three.js</span>
+</footer>
+
+<button class="back-top" id="back-top" aria-label="Volver arriba">↑</button>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<div class="statusbar" role="status" aria-live="polite">
+  <span><span class="dot"></span> Connected</span>
+  <span class="sb-current">§ <strong id="current-section">hero</strong></span>
+  <span class="sb-hide-sm">Luau ✓</span>
+  <span class="sb-hide-md">DataStore ✓</span>
+  <span class="sb-hide-md" id="clock">00:00:00</span>
+  <span class="sb-accent" style="margin-left:auto;">Open for work</span>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+  }
+}
+</script>
+
+<script type="module">
+/* ---------- Loaded state ---------- */
+window.addEventListener('load', () => document.body.classList.add('loaded'));
+setTimeout(() => document.body.classList.add('loaded'), 800);
+
+/* ---------- Year ---------- */
+document.getElementById('year').textContent = new Date().getFullYear();
+
+/* ---------- Reveals ---------- */
+const io = new IntersectionObserver((entries) => {
+  for (const e of entries) {
+    if (e.isIntersecting) {
+      e.target.classList.add('in');
+      io.unobserve(e.target);
+    }
+  }
+}, { threshold: 0.15 });
+document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+/* ---------- Scroll progress ---------- */
+const progressBar = document.querySelector('.progress-bar');
+let ticking = false;
+window.addEventListener('scroll', () => {
+  if (!ticking) {
+    requestAnimationFrame(() => {
+      const h = document.documentElement;
+      const max = h.scrollHeight - h.clientHeight;
+      progressBar.style.width = (max > 0 ? (h.scrollTop / max) * 100 : 0) + '%';
+      ticking = false;
+    });
+    ticking = true;
+  }
+}, { passive: true });
+
+/* ---------- Scroll spy ---------- */
+const sections = document.querySelectorAll('section[id]');
+const sectionEl = document.getElementById('current-section');
+const spy = new IntersectionObserver((entries) => {
+  const visible = entries.filter(e => e.isIntersecting)
+    .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+  if (visible) sectionEl.textContent = visible.target.id;
+}, { threshold: [0.25, 0.5, 0.75] });
+sections.forEach(s => spy.observe(s));
+
+/* ---------- Live clock ---------- */
+const clockEl = document.getElementById('clock');
+function tickClock() {
+  const d = new Date();
+  clockEl.textContent =
+    String(d.getHours()).padStart(2, '0') + ':' +
+    String(d.getMinutes()).padStart(2, '0') + ':' +
+    String(d.getSeconds()).padStart(2, '0');
+}
+tickClock();
+setInterval(tickClock, 1000);
+
+/* ---------- Back to top ---------- */
+const backTop = document.getElementById('back-top');
+window.addEventListener('scroll', () => {
+  backTop.classList.toggle('visible', window.scrollY > 600);
+}, { passive: true });
+backTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+
+/* ---------- Copy to clipboard + toast ---------- */
+const toast = document.getElementById('toast');
+let toastTimer = null;
+function showToast(msg) {
+  toast.textContent = msg;
+  toast.classList.add('visible');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('visible'), 1800);
+}
+document.querySelectorAll('[data-copy]').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    const text = btn.getAttribute('data-copy');
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast('Copiado: ' + text);
+    } catch {
+      showToast('No se pudo copiar. Es: ' + text);
+    }
+  });
+});
+
+/* ---------- Review form (decorative) ---------- */
+const reviewForm = document.getElementById('review-form');
+if (reviewForm) {
+  reviewForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    showToast('Demo only — no se envió nada ✓');
+    reviewForm.reset();
+  });
+}
+
+/* ---------- 3D Scene: Logo Roblox ---------- */
+import * as THREE from 'three';
+
+const canvas = document.getElementById('scene');
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+let renderer = null;
+try {
+  renderer = new THREE.WebGLRenderer({
+    canvas, antialias: true, alpha: true, powerPreference: 'high-performance'
+  });
+} catch (err) {
+  canvas.style.display = 'none';
+  console.warn('[scene] WebGL no disponible:', err);
+}
+
+if (renderer) {
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
+  camera.position.set(0, 0.4, 7.5);
+
+  scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+  const keyLight = new THREE.DirectionalLight(0xffffff, 2.5);
+  keyLight.position.set(3, 4, 5);
+  scene.add(keyLight);
+
+  const rimLight = new THREE.DirectionalLight(0x2345FF, 2.0);
+  rimLight.position.set(-3, -2, 2);
+  scene.add(rimLight);
+
+  const badgeGroup = new THREE.Group();
+  scene.add(badgeGroup);
+
+  const bgSize = 1.6;
+  const radius = 0.25;
+  const shapeBg = new THREE.Shape();
+  shapeBg.moveTo(-bgSize + radius, -bgSize);
+  shapeBg.lineTo(bgSize - radius, -bgSize);
+  shapeBg.quadraticCurveTo(bgSize, -bgSize, bgSize, -bgSize + radius);
+  shapeBg.lineTo(bgSize, bgSize - radius);
+  shapeBg.quadraticCurveTo(bgSize, bgSize, bgSize - radius, bgSize);
+  shapeBg.lineTo(-bgSize + radius, bgSize);
+  shapeBg.quadraticCurveTo(-bgSize, bgSize, -bgSize, bgSize - radius);
+  shapeBg.lineTo(-bgSize, -bgSize + radius);
+  shapeBg.quadraticCurveTo(-bgSize, -bgSize, -bgSize + radius, -bgSize);
+
+  const bgGeo = new THREE.ExtrudeGeometry(shapeBg, {
+    depth: 0.1, bevelEnabled: true, bevelThickness: 0.02, bevelSize: 0.02, bevelSegments: 2
+  });
+
+  const bgMat = new THREE.MeshStandardMaterial({ color: 0x2345FF, roughness: 0.15, metalness: 0.6 });
+  const bgMesh = new THREE.Mesh(bgGeo, bgMat);
+  bgMesh.position.z = -0.2;
+  badgeGroup.add(bgMesh);
+
+  const S = 0.85, T = 0.38, D = 0.15;
+  const shape = new THREE.Shape();
+  shape.moveTo(-S, -S); shape.lineTo(S, -S); shape.lineTo(S, S);
+  shape.lineTo(-S, S); shape.lineTo(-S, -S);
+
+  const hole = new THREE.Path();
+  hole.moveTo(-T, -T); hole.lineTo(T, -T); hole.lineTo(T, T);
+  hole.lineTo(-T, T); hole.lineTo(-T, -T);
+  shape.holes.push(hole);
+
+  const logoGeo = new THREE.ExtrudeGeometry(shape, {
+    depth: D, bevelEnabled: true, bevelThickness: 0.03, bevelSize: 0.03, bevelSegments: 2
+  });
+
+  const matLogo = new THREE.MeshStandardMaterial({ color: 0xFFFFFF, roughness: 0.2, metalness: 0.1 });
+  const logoMesh = new THREE.Mesh(logoGeo, matLogo);
+  logoMesh.rotation.z = Math.PI / 4;
+  logoMesh.position.z = 0.1;
+  badgeGroup.add(logoMesh);
+
+  function makeGlowTexture() {
+    const size = 256;
+    const c = document.createElement('canvas');
+    c.width = c.height = size;
+    const ctx = c.getContext('2d');
+    const g = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2);
+    g.addColorStop(0, 'rgba(35, 69, 255, 0.6)');
+    g.addColorStop(0.4, 'rgba(35, 69, 255, 0.2)');
+    g.addColorStop(1, 'rgba(35, 69, 255, 0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, size, size);
+    const tex = new THREE.CanvasTexture(c);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    return tex;
+  }
+
+  const glow = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: makeGlowTexture(), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending
+  }));
+  glow.scale.set(6.5, 6.5, 1);
+  glow.position.z = -0.5;
+  badgeGroup.add(glow);
+
+  const particles = new THREE.Group();
+  scene.add(particles);
+  const particleGeo = new THREE.SphereGeometry(0.015, 8, 8);
+  const particleMat = new THREE.MeshBasicMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.3 });
+
+  for (let i = 0; i < 30; i++) {
+    const m = new THREE.Mesh(particleGeo, particleMat);
+    const r = 2.0 + Math.random() * 1.5;
+    const theta = Math.random() * Math.PI * 2;
+    const phi = (Math.random() - 0.5) * Math.PI;
+    m.position.set(
+      Math.cos(theta) * Math.cos(phi) * r,
+      Math.sin(phi) * r * 0.7,
+      Math.sin(theta) * Math.cos(phi) * r
+    );
+    m.userData = { base: m.position.clone(), speed: 0.2 + Math.random() * 0.3, phase: Math.random() * Math.PI * 2 };
+    particles.add(m);
+  }
+
+  let baseY = 0;
+
+  function layout() {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+
+    renderer.setSize(w, h, false);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+
+    if (w > h && w < 1000) {
+      baseY = 0;
+      badgeGroup.position.set(2.2, baseY, 0);
+      particles.position.set(2.2, baseY, 0);
+      camera.position.set(0, 0, 9);
+      camera.lookAt(0.5, 0, 0);
+    }
+    else if (w < 900) {
+      baseY = 2.2;
+      badgeGroup.position.set(0, baseY, 0);
+      particles.position.set(0, baseY, 0);
+      camera.position.set(0, 0.8, 9.5);
+      camera.lookAt(0, 1.8, 0);
+    }
+    else {
+      baseY = 0.1;
+      badgeGroup.position.set(2.2, baseY, 0);
+      particles.position.set(2.2, baseY, 0);
+      camera.position.set(0, 0.4, 7.5);
+      camera.lookAt(0.7, 0.3, 0);
+    }
+  }
+
+  layout();
+  window.addEventListener('resize', layout);
+
+  const clock = new THREE.Clock();
+  let rafId = null;
+
+  function animate() {
+    rafId = requestAnimationFrame(animate);
+    const t = clock.getElapsedTime();
+
+    if (!reduce) {
+      logoMesh.rotation.x = Math.sin(t * 0.4) * 0.15;
+      logoMesh.rotation.y = Math.cos(t * 0.5) * 0.25;
+
+      const hover = Math.sin(t * 1.2) * 0.08;
+      badgeGroup.position.y = baseY + hover;
+
+      const pulse = 1 + Math.sin(t * 1.5) * 0.05;
+      glow.scale.set(6.5 * pulse, 6.5 * pulse, 1);
+
+      particles.rotation.y = t * 0.04;
+      for (const c of particles.children) {
+        c.position.y = c.userData.base.y + Math.sin(t * c.userData.speed + c.userData.phase) * 0.1;
+      }
+    }
+
+    renderer.render(scene, camera);
+  }
+  animate();
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+    } else if (!rafId) {
+      animate();
+    }
+  });
+}
+</script>
+
+</body>
+</html>
