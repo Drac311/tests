@@ -170,13 +170,13 @@
              vertical-align:middle;margin-left:4px}
 
   /* 3D Render Box */
-  .render-3d-box{background:#2a2a2a;border:1px solid var(--line);border-radius:var(--r);padding:10px;
+  .render-3d-box{background:#1e1e1e;border:1px solid var(--line);border-radius:var(--r);padding:10px;
                  display:flex;flex-direction:column;align-items:center;justify-content:center;
-                 min-width:130px;min-height:130px;position:relative;overflow:hidden}
-  .render-3d-box svg{width:120px;height:120px;filter:drop-shadow(0 15px 15px rgba(0,0,0,.5))}
+                 min-width:140px;min-height:140px;position:relative;overflow:hidden}
+  .render-3d-box svg{width:130px;height:130px;overflow:visible}
   .render-3d-box .regen-btn{position:absolute;bottom:6px;right:6px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);
-                            font-size:10px;padding:3px 8px;border-radius:4px;cursor:pointer;color:#ddd;z-index:10}
-  .render-3d-box .regen-btn:hover{background:rgba(255,255,255,0.2);color:#fff}
+                            font-size:10px;padding:3px 8px;border-radius:4px;cursor:pointer;color:#ddd;z-index:10;transition:.15s}
+  .render-3d-box .regen-btn:hover{background:rgba(255,255,255,0.25);color:#fff}
 
   /* ---------- Timer box ---------- */
   .timer-box{background:var(--bg);border:1px solid var(--line);border-radius:var(--r);padding:18px}
@@ -269,7 +269,7 @@
       <p>Inca · Mallorca · Diario de escalada</p>
     </div>
   </div>
-  <div class="header-meta" id="headerMeta">—<br><span style="opacity:.6">v3.3</span></div>
+  <div class="header-meta" id="headerMeta">—<br><span style="opacity:.6">v3.4</span></div>
 </header>
 
 <nav>
@@ -425,14 +425,14 @@
           <label>Foto y bloque 3D inteligente</label>
           <div class="drop-zone" id="projDropZone" style="margin-bottom:10px">
             <strong>Arrastra una foto de la pared o del bloque</strong>
-            o pulsa para seleccionar. La app extraerá las presas de tu color.
+            o pulsa para seleccionar. La app extraerá las presas de tu color y generará un bloque 3D.
             <input type="file" id="projImageInput" accept="image/*" hidden>
           </div>
           
           <div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap">
             <!-- Previsualización de la foto real -->
             <div style="display:flex;flex-direction:column;gap:6px">
-              <img id="projPreview" alt="" style="display:none;width:120px;height:120px;border-radius:4px;object-fit:cover;border:1px solid var(--line);background:var(--bg2)">
+              <img id="projPreview" alt="" style="display:none;width:130px;height:130px;border-radius:4px;object-fit:cover;border:1px solid var(--line);background:var(--bg2)">
               <button type="button" class="mini-btn" id="btnClearProjImage" hidden style="text-align:center">Quitar foto</button>
             </div>
 
@@ -601,7 +601,7 @@
         <div>
           <div class="serif" style="font-size:19px;font-weight:600">es<span style="color:var(--accent)">Rocodrom</span></div>
           <div class="hint" style="margin-top:4px">
-            v3.3 · Diario de escalada offline para esRocodrom Inca (Mallorca).<br>
+            v3.4 · Diario de escalada offline para esRocodrom Inca (Mallorca).<br>
             Sin cuentas, sin nube. Tus datos, en tu navegador.
           </div>
         </div>
@@ -622,7 +622,7 @@
 
 <script>
 /* =========================================================
-   esRocodrom v3.3 — Inca · Mallorca
+   esRocodrom v3.4 — Inca · Mallorca
    ========================================================= */
 const KEY_V3 = 'esrocodrom_v3';
 const KEY_V2 = 'esrocodrom_v2';
@@ -676,117 +676,127 @@ function weekStart(d){
 }
 
 /* =========================================================
-   RENDER 3D INTELIGENTE (EXTRACCIÓN DE IMAGEN)
+   RENDER 3D INTELIGENTE (EXTRACCIÓN DE IMAGEN Y MAPEO ISOMÉTRICO)
    ========================================================= */
-function generateIntelligent3D(imgElement, targetColorHex) {
-  // Si no hay imagen, generamos un bloque aleatorio bonito
-  if (!imgElement) {
-    return render3DBlock(null, targetColorHex);
+function generateIntelligent3D(imgElement, imgDataUrl, targetColorHex) {
+  if (!imgElement || !imgDataUrl) {
+    return renderFallback3D(targetColorHex);
   }
 
   const canvas = $('#imgCanvas');
-  const W = 200, H = 200;
+  const W = 150, H = 150;
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
   
-  // Dibujar imagen centrada
-  const scale = Math.max(W / imgElement.width, H / imgElement.height);
-  const x = (W / 2) - (imgElement.width / 2) * scale;
-  const y = (H / 2) - (imgElement.height / 2) * scale;
-  ctx.drawImage(imgElement, x, y, imgElement.width * scale, imgElement.height * scale);
+  // Center crop to square for better isometric mapping
+  const size = Math.min(imgElement.width, imgElement.height);
+  const sx = (imgElement.width - size) / 2;
+  const sy = (imgElement.height - size) / 2;
+  ctx.drawImage(imgElement, sx, sy, size, size, 0, 0, W, H);
 
   const imageData = ctx.getImageData(0, 0, W, H).data;
-  const holds = [];
 
-  // Color objetivo
   const tr = parseInt(targetColorHex.slice(1,3), 16);
   const tg = parseInt(targetColorHex.slice(3,5), 16);
   const tb = parseInt(targetColorHex.slice(5,7), 16);
 
-  // Escanear en una cuadrícula de 20x20
-  const gridSize = 10;
+  let holdsSvg = '';
+  const gridSize = 6;
+  
   for (let gy = 0; gy < H; gy += gridSize) {
-      for (let gx = 0; gx < W; gx += gridSize) {
-          let r = 0, g = 0, b = 0, count = 0;
-          for (let py = gy; py < gy + gridSize && py < H; py++) {
-              for (let px = gx; px < gx + gridSize && px < W; px++) {
-                  const idx = (py * W + px) * 4;
-                  r += imageData[idx];
-                  g += imageData[idx+1];
-                  b += imageData[idx+2];
-                  count++;
-              }
-          }
-          r /= count; g /= count; b /= count;
-
-          // Distancia de color
+    for (let gx = 0; gx < W; gx += gridSize) {
+      let matchCount = 0;
+      for (let py = gy; py < gy + gridSize; py++) {
+        for (let px = gx; px < gx + gridSize; px++) {
+          const idx = (py * W + px) * 4;
+          const r = imageData[idx], g = imageData[idx+1], b = imageData[idx+2];
           const dist = Math.sqrt((r-tr)**2 + (g-tg)**2 + (b-tb)**2);
-          
-          // Si coincide con el color (con margen de error)
-          if (dist < 70) {
-              holds.push({ x: gx + gridSize/2, y: gy + gridSize/2 });
-          }
+          if (dist < 85) matchCount++;
+        }
       }
+      
+      // If enough pixels match, draw a 3D hold
+      if (matchCount > (gridSize * gridSize) * 0.3) {
+        // Map to isometric space (-70 to 70)
+        const mapX = (gx / W) * 140 - 70;
+        const mapY = (gy / H) * 140 - 70;
+        
+        const r = 4 + Math.random() * 5; // Random size 4-9
+        
+        // Draw a 3D hold (circle with shadow and highlight)
+        holdsSvg += `
+          <g transform="translate(${mapX}, ${mapY})">
+            <circle cx="1.5" cy="2.5" r="${r}" fill="rgba(0,0,0,0.7)" filter="blur(1.5px)" />
+            <circle cx="0" cy="0" r="${r}" fill="${targetColorHex}" stroke="rgba(0,0,0,0.4)" stroke-width="0.5"/>
+            <circle cx="${-r*0.3}" cy="${-r*0.3}" r="${r*0.4}" fill="rgba(255,255,255,0.6)" />
+          </g>
+        `;
+      }
+    }
   }
 
-  return render3DBlock(holds, targetColorHex);
-}
+  const isoTransform = "translate(100, 100) scale(1, 0.5) rotate(45)";
 
-function render3DBlock(holds, baseColor) {
-  // Si no se detectaron presas, generamos algunas aleatorias en el centro para que no quede vacío
-  if (!holds || holds.length === 0) {
-      holds = [];
-      const numRandom = 8 + Math.floor(Math.random() * 8);
-      for (let i = 0; i < numRandom; i++) {
-          holds.push({ x: 50 + Math.random() * 100, y: 50 + Math.random() * 100 });
-      }
-  }
-
-  let svg = `
+  return `
     <defs>
-      <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
-        <feDropShadow dx="1" dy="2" stdDeviation="1.5" flood-color="#000" flood-opacity="0.6"/>
+      <filter id="shadow3d" x="-50%" y="-50%" width="200%" height="200%">
+        <feDropShadow dx="0" dy="8" stdDeviation="6" flood-color="#000" flood-opacity="0.8"/>
       </filter>
-      <linearGradient id="wallGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stop-color="#444" />
-        <stop offset="100%" stop-color="#222" />
-      </linearGradient>
     </defs>
 
-    <!-- Bloque 3D (Base) -->
-    <g transform="translate(100, 100) scale(1, 0.5) rotate(45)">
-       <!-- Caras laterales (extrusión) -->
-       <polygon points="-70,-70 -70,70 -70,85 -70,-55" fill="#111" />
-       <polygon points="-70,70 70,70 70,85 -70,85" fill="#1a1a1a" />
+    <g filter="url(#shadow3d)" transform="${isoTransform}">
+       <!-- Left face (depth) -->
+       <polygon points="-70,-70 -70,70 -70,95 -70,-45" fill="#1a1a1a" />
+       <!-- Right face (depth) -->
+       <polygon points="-70,70 70,70 70,95 -70,95" fill="#222" />
        
-       <!-- Cara frontal -->
-       <rect x="-70" y="-70" width="140" height="140" fill="url(#wallGrad)" stroke="#000" stroke-width="2"/>
+       <!-- Front face base -->
+       <rect x="-70" y="-70" width="140" height="140" fill="#2a2a2a" />
        
-       <!-- Rejilla sutil para dar efecto de panel -->
-       <path d="M-70,-35 L70,-35 M-70,0 L70,0 M-70,35 L70,35 M-35,-70 L-35,70 M0,-70 L0,70 M35,-70 L35,70" stroke="#555" stroke-width="1" opacity="0.3"/>
+       <!-- Mapped Image (dimmed & desaturated) -->
+       <image href="${imgDataUrl}" x="-70" y="-70" width="140" height="140" preserveAspectRatio="xMidYMid slice" opacity="0.4" style="filter: grayscale(100%) contrast(120%) brightness(0.6);" />
+       
+       <!-- Extracted Holds -->
+       ${holdsSvg}
     </g>
-
-    <!-- Presas mapeadas a la cara frontal -->
-    <g transform="translate(100, 100) scale(1, 0.5) rotate(45)">
   `;
+}
 
-  // Mapear las presas extraídas
-  holds.forEach(h => {
-      // Coordenadas relativas al centro (100,100) y escaladas al tamaño del bloque (-70 a 70)
-      const mappedX = (h.x - 100) * 0.7;
-      const mappedY = (h.y - 100) * 0.7;
-      
-      // Tamaño aleatorio para simular diferentes presas
-      const r = 3 + Math.random() * 3;
-      
-      // Dibujar la presa con el color seleccionado y sombra
-      svg += `<circle cx="${mappedX}" cy="${mappedY}" r="${r}" fill="${baseColor}" filter="url(#shadow)" stroke="rgba(0,0,0,0.5)" stroke-width="0.5" />`;
-      // Brillo superior para darle volumen 3D a la presa
-      svg += `<circle cx="${mappedX - r*0.2}" cy="${mappedY - r*0.2}" r="${r*0.4}" fill="rgba(255,255,255,0.4)" />`;
-  });
+function renderFallback3D(baseColor) {
+  const isoTransform = "translate(100, 100) scale(1, 0.5) rotate(45)";
+  
+  let randomHolds = '';
+  for (let i = 0; i < 15; i++) {
+    const x = -60 + Math.random() * 120;
+    const y = -60 + Math.random() * 120;
+    const r = 4 + Math.random() * 5;
+    randomHolds += `
+      <g transform="translate(${x}, ${y})">
+        <circle cx="1.5" cy="2.5" r="${r}" fill="rgba(0,0,0,0.7)" filter="blur(1.5px)" />
+        <circle cx="0" cy="0" r="${r}" fill="${baseColor}" stroke="rgba(0,0,0,0.4)" stroke-width="0.5"/>
+        <circle cx="${-r*0.3}" cy="${-r*0.3}" r="${r*0.4}" fill="rgba(255,255,255,0.6)" />
+      </g>
+    `;
+  }
 
-  svg += `</g>`;
-  return svg;
+  return `
+    <defs>
+      <filter id="shadow3d" x="-50%" y="-50%" width="200%" height="200%">
+        <feDropShadow dx="0" dy="8" stdDeviation="6" flood-color="#000" flood-opacity="0.8"/>
+      </filter>
+      <pattern id="wall-pattern" width="20" height="20" patternUnits="userSpaceOnUse">
+        <rect width="20" height="20" fill="#333" />
+        <circle cx="10" cy="10" r="1.5" fill="#444" />
+      </pattern>
+    </defs>
+
+    <g filter="url(#shadow3d)" transform="${isoTransform}">
+       <polygon points="-70,-70 -70,70 -70,95 -70,-45" fill="#1a1a1a" />
+       <polygon points="-70,70 70,70 70,95 -70,95" fill="#222" />
+       <rect x="-70" y="-70" width="140" height="140" fill="url(#wall-pattern)" stroke="#222" stroke-width="2"/>
+       ${randomHolds}
+    </g>
+  `;
 }
 
 /* ---------- Estado ---------- */
@@ -1285,36 +1295,31 @@ const pType  = $('#pType');
 const pGrade = $('#pGrade');
 let editingProject = null;
 let pendingProjectImage = null;
-let currentImgElement = null; // Guardar el objeto Image para volver a procesarlo
+let currentImgElement = null;
 
 fillGradeSelect(pGrade);
 pType.addEventListener('change', () => fillGradeSelect(pGrade));
 
 function update3DRender() {
   const color = $('#projColorInput').value;
-  // Generar el SVG usando la imagen actual y el color seleccionado
-  const svgContent = generateIntelligent3D(currentImgElement, color);
+  const svgContent = generateIntelligent3D(currentImgElement, pendingProjectImage, color);
   $('#proj3DSvg').innerHTML = svgContent;
 }
 
-// Evento para regenerar (volver a escanear)
 $('#btnRegen3D').addEventListener('click', (e) => {
   e.preventDefault();
   update3DRender();
   toast('🔄 Imagen re-escaneada');
 });
 
-// Escuchar cambios en el color para actualizar el 3D
 $('#projColorInput').addEventListener('input', (e) => {
   if (currentImgElement) {
     update3DRender();
   } else {
-    // Si no hay imagen, solo actualizar el color del bloque por defecto
-    $('#proj3DSvg').innerHTML = render3DBlock(null, e.target.value);
+    $('#proj3DSvg').innerHTML = renderFallback3D(e.target.value);
   }
 });
 
-// Cuando cambia el grado (dificultad), sugerir el color
 pGrade.addEventListener('change', (e) => {
   const hex = getColorHex(e.target.value);
   if (hex) {
@@ -1338,8 +1343,7 @@ function resetProjectForm(){
   $('#btnCancelProjectEdit').hidden = true;
   $('#projectPanel').classList.remove('editing');
   
-  // Generar bloque vacío por defecto
-  $('#proj3DSvg').innerHTML = render3DBlock(null, '#c2410c');
+  $('#proj3DSvg').innerHTML = renderFallback3D('#c2410c');
 }
 $('#btnCancelProjectEdit').addEventListener('click', () => { resetProjectForm(); toast('Edición cancelada'); });
 
@@ -1360,7 +1364,6 @@ function startEditProject(id){
     $('#projPreview').style.display = 'block';
     $('#btnClearProjImage').hidden = false;
     
-    // Cargar imagen en memoria para poder re-procesarla
     const img = new Image();
     img.onload = () => {
       currentImgElement = img;
@@ -1369,14 +1372,13 @@ function startEditProject(id){
     img.src = pendingProjectImage;
   } else {
     currentImgElement = null;
+    $('#proj3DSvg').innerHTML = renderFallback3D(p.color || '#c2410c');
   }
 
   $('#projColorInput').value = p.color || getColorHex(p.grade) || '#c2410c';
   
   if (p.renderSvg) {
     $('#proj3DSvg').innerHTML = p.renderSvg;
-  } else if (!currentImgElement) {
-    update3DRender();
   }
 
   $('#projectFormTitle').textContent = 'Editar proyecto';
@@ -1414,12 +1416,11 @@ async function handleProjectImage(file){
   $('#projPreview').style.display = 'block';
   $('#btnClearProjImage').hidden = false;
   
-  // Cargar la imagen y generar el render inteligente
   const img = new Image();
   img.onload = () => {
     currentImgElement = img;
     update3DRender();
-    toast('🧠 Imagen analizada. Presas extraídas.');
+    toast('🧠 Imagen analizada. Bloque 3D generado.');
   };
   img.src = dataUrl;
 }
@@ -1429,7 +1430,7 @@ $('#btnClearProjImage').addEventListener('click', () => {
   currentImgElement = null;
   $('#projPreview').style.display = 'none';
   $('#btnClearProjImage').hidden = true;
-  update3DRender(); // Volver al bloque por defecto
+  $('#proj3DSvg').innerHTML = renderFallback3D($('#projColorInput').value);
 });
 
 $('#projectForm').addEventListener('submit', e => {
@@ -1478,13 +1479,13 @@ function renderProjects(){
       <div style="display:flex;gap:12px;align-items:center">
         
         <!-- Render 3D Guardado -->
-        <div style="flex:0 0 70px;height:70px;display:flex;align-items:center;justify-content:center;background:#2a2a2a;border-radius:4px;border:1px solid var(--line);overflow:hidden">
+        <div style="flex:0 0 80px;height:80px;display:flex;align-items:center;justify-content:center;background:#1e1e1e;border-radius:4px;border:1px solid var(--line);overflow:hidden">
           <svg viewBox="0 0 200 200" style="width:100%;height:100%;transform:scale(1.1)">${p.renderSvg || ''}</svg>
         </div>
 
         <!-- Foto original pequeña -->
         ${p.image
-          ? `<img src="${esc(p.image)}" alt="" style="width:70px;height:70px;border-radius:4px;object-fit:cover;flex:0 0 70px;border:1px solid var(--line)">`
+          ? `<img src="${esc(p.image)}" alt="" style="width:80px;height:80px;border-radius:4px;object-fit:cover;flex:0 0 80px;border:1px solid var(--line)">`
           : ''}
 
         <div style="flex:1;min-width:0">
@@ -1775,7 +1776,7 @@ function renderGoals(){
     </div>`;
 
   $('#headerMeta').innerHTML =
-    `${t.sessions}/${gs} esta semana<br><span style="opacity:.6">v3.3</span>`;
+    `${t.sessions}/${gs} esta semana<br><span style="opacity:.6">v3.4</span>`;
 }
 
 $('#btnEditGoals').addEventListener('click', () => {
@@ -1786,7 +1787,6 @@ $('#btnEditGoals').addEventListener('click', () => {
 function renderStats(){
   const S = state.sessions;
 
-  /* KPIs */
   const totalMin = S.reduce((a,s) => a + (+s.dur || 0), 0);
   const totalSends = S.reduce((a,s) => a + (+s.sends || 0), 0);
   const hours = Math.round(totalMin / 60 * 10) / 10;
@@ -1809,7 +1809,6 @@ function renderStats(){
     <div class="kpi"><div class="v">${streak}<small> sem</small></div><div class="k">Racha</div></div>
   `;
 
-  /* Heatmap 16 semanas */
   const counts = {};
   S.forEach(s => { counts[s.date] = (counts[s.date] || 0) + 1; });
   const weeks = 16;
@@ -1835,7 +1834,6 @@ function renderStats(){
   }
   $('#heatmap').innerHTML = hm;
 
-  /* Chart 8 semanas */
   const wk = [];
   for (let i = 7; i >= 0; i--){
     const d = new Date(ws);
@@ -1853,7 +1851,6 @@ function renderStats(){
     </div>`;
   }).join('');
 
-  /* Reparto por tipo */
   const types = ['Fuerza','Bloque','Vía','Campus','Fingerboard'];
   const tc = {};
   S.forEach(s => { tc[s.type] = (tc[s.type] || 0) + 1; });
@@ -1864,7 +1861,6 @@ function renderStats(){
       <b>${tc[t]}</b></div>`).join('');
   $('#typeChart').innerHTML = rows || '<div class="empty">Sin datos todavía</div>';
 
-  /* Progresión de dificultad (Colores) */
   const months = [];
   const today = new Date();
   for (let i = 5; i >= 0; i--){
@@ -1893,7 +1889,6 @@ function renderStats(){
     </div>`;
   }).join('');
 
-  /* Récords */
   let bestOverall = -1;
   S.forEach(s => {
     if (!s.grade) return;
@@ -1942,7 +1937,7 @@ $('#goalMinutes').addEventListener('change', e => {
 });
 
 $('#btnExport').addEventListener('click', () => {
-  const data = JSON.stringify({ app: 'esRocodrom', version: 3.3, exported: new Date().toISOString(), ...state }, null, 2);
+  const data = JSON.stringify({ app: 'esRocodrom', version: 3.4, exported: new Date().toISOString(), ...state }, null, 2);
   download(new Blob([data], { type: 'application/json' }), `esrocodrom-${todayISO()}.json`);
   toast('⬇️ Datos exportados');
 });
@@ -2026,11 +2021,11 @@ $('#btnDemo').addEventListener('click', () => {
 
   state.projects.push(
     { id: uid(), name: 'La Trave', type: 'Bloque', grade: 'Azul', status: 'proyecto',
-      attempts: 12, notes: 'Salida dura, reposición clave', created: todayISO(), image: null, color: demoColor1, renderSvg: render3DBlock(null, demoColor1) },
+      attempts: 12, notes: 'Salida dura, reposición clave', created: todayISO(), image: null, color: demoColor1, renderSvg: renderFallback3D(demoColor1) },
     { id: uid(), name: 'Vía del murciélago', type: 'Vía', grade: 'Rojo', status: 'proyecto',
-      attempts: 6, notes: '', created: todayISO(), image: null, color: demoColor2, renderSvg: render3DBlock(null, demoColor2) },
+      attempts: 6, notes: '', created: todayISO(), image: null, color: demoColor2, renderSvg: renderFallback3D(demoColor2) },
     { id: uid(), name: 'Travesía naranja', type: 'Bloque', grade: 'Verde', status: 'encadenada',
-      attempts: 4, notes: 'Encadenada al tercer día', created: todayISO(), image: null, color: demoColor3, renderSvg: render3DBlock(null, demoColor3) }
+      attempts: 4, notes: 'Encadenada al tercer día', created: todayISO(), image: null, color: demoColor3, renderSvg: renderFallback3D(demoColor3) }
   );
   saveState(); renderAll();
   toast('🧪 Datos de ejemplo cargados');
