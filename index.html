@@ -269,7 +269,7 @@
       <p>Inca · Mallorca · Diario de escalada</p>
     </div>
   </div>
-  <div class="header-meta" id="headerMeta">—<br><span style="opacity:.6">v3.4</span></div>
+  <div class="header-meta" id="headerMeta">—<br><span style="opacity:.6">v3.5</span></div>
 </header>
 
 <nav>
@@ -601,7 +601,7 @@
         <div>
           <div class="serif" style="font-size:19px;font-weight:600">es<span style="color:var(--accent)">Rocodrom</span></div>
           <div class="hint" style="margin-top:4px">
-            v3.4 · Diario de escalada offline para esRocodrom Inca (Mallorca).<br>
+            v3.5 · Diario de escalada offline para esRocodrom Inca (Mallorca).<br>
             Sin cuentas, sin nube. Tus datos, en tu navegador.
           </div>
         </div>
@@ -622,7 +622,7 @@
 
 <script>
 /* =========================================================
-   esRocodrom v3.4 — Inca · Mallorca
+   esRocodrom v3.5 — Inca · Mallorca
    ========================================================= */
 const KEY_V3 = 'esrocodrom_v3';
 const KEY_V2 = 'esrocodrom_v2';
@@ -676,7 +676,7 @@ function weekStart(d){
 }
 
 /* =========================================================
-   RENDER 3D INTELIGENTE (EXTRACCIÓN DE IMAGEN Y MAPEO ISOMÉTRICO)
+   RENDER 3D INTELIGENTE (EXTRACCIÓN DE COLOR Y VOLUMEN)
    ========================================================= */
 function generateIntelligent3D(imgElement, imgDataUrl, targetColorHex) {
   if (!imgElement || !imgDataUrl) {
@@ -684,11 +684,11 @@ function generateIntelligent3D(imgElement, imgDataUrl, targetColorHex) {
   }
 
   const canvas = $('#imgCanvas');
-  const W = 150, H = 150;
+  const W = 200, H = 200;
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
   
-  // Center crop to square for better isometric mapping
+  // Recortar al centro cuadrado para evitar distorsiones
   const size = Math.min(imgElement.width, imgElement.height);
   const sx = (imgElement.width - size) / 2;
   const sy = (imgElement.height - size) / 2;
@@ -701,34 +701,41 @@ function generateIntelligent3D(imgElement, imgDataUrl, targetColorHex) {
   const tb = parseInt(targetColorHex.slice(5,7), 16);
 
   let holdsSvg = '';
-  const gridSize = 6;
+  const gridSize = 10; // Tamaño de bloque para escanear
   
   for (let gy = 0; gy < H; gy += gridSize) {
     for (let gx = 0; gx < W; gx += gridSize) {
       let matchCount = 0;
-      for (let py = gy; py < gy + gridSize; py++) {
-        for (let px = gx; px < gx + gridSize; px++) {
+      let totalPixels = 0;
+      
+      for (let py = gy; py < gy + gridSize && py < H; py++) {
+        for (let px = gx; px < gx + gridSize && px < W; px++) {
           const idx = (py * W + px) * 4;
           const r = imageData[idx], g = imageData[idx+1], b = imageData[idx+2];
           const dist = Math.sqrt((r-tr)**2 + (g-tg)**2 + (b-tb)**2);
-          if (dist < 85) matchCount++;
+          // Umbral ajustado para evitar que el fondo gris se cuele
+          if (dist < 65) matchCount++;
+          totalPixels++;
         }
       }
       
-      // If enough pixels match, draw a 3D hold
-      if (matchCount > (gridSize * gridSize) * 0.3) {
-        // Map to isometric space (-70 to 70)
-        const mapX = (gx / W) * 140 - 70;
-        const mapY = (gy / H) * 140 - 70;
+      // Si más del 25% del bloque coincide con el color, pintamos una presa
+      if (matchCount > totalPixels * 0.25) {
+        // Coordenadas relativas al panel (de -80 a 80)
+        const mapX = (gx / W) * 160 - 80;
+        const mapY = (gy / H) * 160 - 80;
         
-        const r = 4 + Math.random() * 5; // Random size 4-9
+        const r = 4 + Math.random() * 4; // Tamaño de presa variable
         
-        // Draw a 3D hold (circle with shadow and highlight)
+        // Dibujar presa 3D
         holdsSvg += `
           <g transform="translate(${mapX}, ${mapY})">
-            <circle cx="1.5" cy="2.5" r="${r}" fill="rgba(0,0,0,0.7)" filter="blur(1.5px)" />
-            <circle cx="0" cy="0" r="${r}" fill="${targetColorHex}" stroke="rgba(0,0,0,0.4)" stroke-width="0.5"/>
-            <circle cx="${-r*0.3}" cy="${-r*0.3}" r="${r*0.4}" fill="rgba(255,255,255,0.6)" />
+            <!-- Sombra -->
+            <circle cx="2" cy="3" r="${r}" fill="rgba(0,0,0,0.8)" filter="blur(1.5px)" />
+            <!-- Presa -->
+            <circle cx="0" cy="0" r="${r}" fill="${targetColorHex}" stroke="rgba(0,0,0,0.5)" stroke-width="0.8"/>
+            <!-- Brillo volumétrico -->
+            <circle cx="${-r*0.3}" cy="${-r*0.3}" r="${r*0.35}" fill="rgba(255,255,255,0.5)" />
           </g>
         `;
       }
@@ -740,23 +747,24 @@ function generateIntelligent3D(imgElement, imgDataUrl, targetColorHex) {
   return `
     <defs>
       <filter id="shadow3d" x="-50%" y="-50%" width="200%" height="200%">
-        <feDropShadow dx="0" dy="8" stdDeviation="6" flood-color="#000" flood-opacity="0.8"/>
+        <feDropShadow dx="0" dy="6" stdDeviation="4" flood-color="#000" flood-opacity="0.9"/>
       </filter>
+      <pattern id="wall-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+        <rect width="20" height="20" fill="#2a2a2a" />
+        <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#333" stroke-width="1" />
+      </pattern>
     </defs>
 
     <g filter="url(#shadow3d)" transform="${isoTransform}">
-       <!-- Left face (depth) -->
-       <polygon points="-70,-70 -70,70 -70,95 -70,-45" fill="#1a1a1a" />
-       <!-- Right face (depth) -->
-       <polygon points="-70,70 70,70 70,95 -70,95" fill="#222" />
+       <!-- Grosor del panel (izquierda) -->
+       <polygon points="-80,-80 -80,80 -80,100 -80,-60" fill="#111" />
+       <!-- Grosor del panel (derecha) -->
+       <polygon points="-80,80 80,80 80,100 -80,100" fill="#1a1a1a" />
        
-       <!-- Front face base -->
-       <rect x="-70" y="-70" width="140" height="140" fill="#2a2a2a" />
+       <!-- Cara frontal del panel -->
+       <rect x="-80" y="-80" width="160" height="160" fill="url(#wall-grid)" stroke="#222" stroke-width="2"/>
        
-       <!-- Mapped Image (dimmed & desaturated) -->
-       <image href="${imgDataUrl}" x="-70" y="-70" width="140" height="140" preserveAspectRatio="xMidYMid slice" opacity="0.4" style="filter: grayscale(100%) contrast(120%) brightness(0.6);" />
-       
-       <!-- Extracted Holds -->
+       <!-- Presas extraídas -->
        ${holdsSvg}
     </g>
   `;
@@ -767,14 +775,14 @@ function renderFallback3D(baseColor) {
   
   let randomHolds = '';
   for (let i = 0; i < 15; i++) {
-    const x = -60 + Math.random() * 120;
-    const y = -60 + Math.random() * 120;
+    const x = -70 + Math.random() * 140;
+    const y = -70 + Math.random() * 140;
     const r = 4 + Math.random() * 5;
     randomHolds += `
       <g transform="translate(${x}, ${y})">
-        <circle cx="1.5" cy="2.5" r="${r}" fill="rgba(0,0,0,0.7)" filter="blur(1.5px)" />
-        <circle cx="0" cy="0" r="${r}" fill="${baseColor}" stroke="rgba(0,0,0,0.4)" stroke-width="0.5"/>
-        <circle cx="${-r*0.3}" cy="${-r*0.3}" r="${r*0.4}" fill="rgba(255,255,255,0.6)" />
+        <circle cx="2" cy="3" r="${r}" fill="rgba(0,0,0,0.8)" filter="blur(1.5px)" />
+        <circle cx="0" cy="0" r="${r}" fill="${baseColor}" stroke="rgba(0,0,0,0.5)" stroke-width="0.8"/>
+        <circle cx="${-r*0.3}" cy="${-r*0.3}" r="${r*0.35}" fill="rgba(255,255,255,0.5)" />
       </g>
     `;
   }
@@ -782,18 +790,18 @@ function renderFallback3D(baseColor) {
   return `
     <defs>
       <filter id="shadow3d" x="-50%" y="-50%" width="200%" height="200%">
-        <feDropShadow dx="0" dy="8" stdDeviation="6" flood-color="#000" flood-opacity="0.8"/>
+        <feDropShadow dx="0" dy="6" stdDeviation="4" flood-color="#000" flood-opacity="0.9"/>
       </filter>
-      <pattern id="wall-pattern" width="20" height="20" patternUnits="userSpaceOnUse">
-        <rect width="20" height="20" fill="#333" />
-        <circle cx="10" cy="10" r="1.5" fill="#444" />
+      <pattern id="wall-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+        <rect width="20" height="20" fill="#2a2a2a" />
+        <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#333" stroke-width="1" />
       </pattern>
     </defs>
 
     <g filter="url(#shadow3d)" transform="${isoTransform}">
-       <polygon points="-70,-70 -70,70 -70,95 -70,-45" fill="#1a1a1a" />
-       <polygon points="-70,70 70,70 70,95 -70,95" fill="#222" />
-       <rect x="-70" y="-70" width="140" height="140" fill="url(#wall-pattern)" stroke="#222" stroke-width="2"/>
+       <polygon points="-80,-80 -80,80 -80,100 -80,-60" fill="#111" />
+       <polygon points="-80,80 80,80 80,100 -80,100" fill="#1a1a1a" />
+       <rect x="-80" y="-80" width="160" height="160" fill="url(#wall-grid)" stroke="#222" stroke-width="2"/>
        ${randomHolds}
     </g>
   `;
@@ -1776,7 +1784,7 @@ function renderGoals(){
     </div>`;
 
   $('#headerMeta').innerHTML =
-    `${t.sessions}/${gs} esta semana<br><span style="opacity:.6">v3.4</span>`;
+    `${t.sessions}/${gs} esta semana<br><span style="opacity:.6">v3.5</span>`;
 }
 
 $('#btnEditGoals').addEventListener('click', () => {
@@ -1937,7 +1945,7 @@ $('#goalMinutes').addEventListener('change', e => {
 });
 
 $('#btnExport').addEventListener('click', () => {
-  const data = JSON.stringify({ app: 'esRocodrom', version: 3.4, exported: new Date().toISOString(), ...state }, null, 2);
+  const data = JSON.stringify({ app: 'esRocodrom', version: 3.5, exported: new Date().toISOString(), ...state }, null, 2);
   download(new Blob([data], { type: 'application/json' }), `esrocodrom-${todayISO()}.json`);
   toast('⬇️ Datos exportados');
 });
